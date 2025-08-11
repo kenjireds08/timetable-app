@@ -183,17 +183,19 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
         </div>
 
         <div className="form-group">
-          <label>
-            <input
-              type="checkbox"
-              checked={formData.constraints?.sequentialSubjects?.mustBeConsecutiveDays || false}
-              onChange={(e) => updateConstraints('sequentialSubjects', {
-                ...formData.constraints?.sequentialSubjects,
-                mustBeConsecutiveDays: e.target.checked
-              })}
-            />
-            連続した日程で実施する必要がある
-          </label>
+          <div className="checkbox-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={formData.constraints?.sequentialSubjects?.mustBeConsecutiveDays || false}
+                onChange={(e) => updateConstraints('sequentialSubjects', {
+                  ...formData.constraints?.sequentialSubjects,
+                  mustBeConsecutiveDays: e.target.checked
+                })}
+              />
+              連続した日程で実施する必要がある
+            </label>
+          </div>
         </div>
       </div>
 
@@ -202,25 +204,25 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
         <h5><Settings size={16} /> その他の制約</h5>
         
         <div className="form-group">
-          <label>
-            <input
-              type="checkbox"
-              checked={formData.constraints?.preferConsecutiveClasses || false}
-              onChange={(e) => updateConstraints('preferConsecutiveClasses', e.target.checked)}
-            />
-            連続コマを優先する
-          </label>
-        </div>
-
-        <div className="form-group">
-          <label>
-            <input
-              type="checkbox"
-              checked={formData.constraints?.prioritizeGapMinimization || false}
-              onChange={(e) => updateConstraints('prioritizeGapMinimization', e.target.checked)}
-            />
-            空きコマ最小化を優先する
-          </label>
+          <div className="checkbox-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={formData.constraints?.preferConsecutiveClasses || false}
+                onChange={(e) => updateConstraints('preferConsecutiveClasses', e.target.checked)}
+              />
+              連続コマを優先する
+            </label>
+            
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={formData.constraints?.prioritizeGapMinimization || false}
+                onChange={(e) => updateConstraints('prioritizeGapMinimization', e.target.checked)}
+              />
+              空きコマ最小化を優先する
+            </label>
+          </div>
         </div>
 
         <div className="form-group">
