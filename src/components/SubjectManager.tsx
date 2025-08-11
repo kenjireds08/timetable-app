@@ -1,6 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Subject, Department, Grade, LessonType, Teacher, Classroom } from '../types';
-import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+
+interface SubjectProgressInfo {
+  subjectId: string;
+  totalRequired: number;
+  scheduledCount: number;
+  completionRate: number;
+  missingFromGroups: string[];
+}
 
 interface SubjectManagerProps {
   subjects: Subject[];
@@ -21,6 +29,8 @@ const SubjectManager = ({
 }: SubjectManagerProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [semesterData, setSemesterData] = useState<any>(null);
+  const [subjectProgress, setSubjectProgress] = useState<Map<string, SubjectProgressInfo>>(new Map());
   const [formData, setFormData] = useState<Partial<Subject>>({
     name: '',
     teacherIds: [],
@@ -30,6 +40,113 @@ const SubjectManager = ({
     lessonType: '通常',
     availableClassroomIds: []
   });
+
+  // 半年分時間割データを読み込み
+  useEffect(() => {
+    const loadSemesterData = async () => {
+      try {
+        const generatedData = localStorage.getItem('generatedSemesterData');
+        let data;
+        
+        if (generatedData) {
+          data = JSON.parse(generatedData);
+        } else {
+          const response = await fetch('/semester_schedule.json');
+          data = await response.json();
+        }
+        
+        setSemesterData(data);
+      } catch (error) {
+        console.error('Failed to load semester data:', error);
+      }
+    };
+
+    loadSemesterData();
+  }, []);
+
+  // 科目の進捗状況を計算
+  useEffect(() => {
+    if (!semesterData) return;
+
+    const progressMap = new Map<string, SubjectProgressInfo>();
+
+    subjects.forEach(subject => {
+      const progress = calculateSubjectProgress(subject, semesterData);
+      progressMap.set(subject.id, progress);
+    });
+
+    setSubjectProgress(progressMap);
+  }, [subjects, semesterData]);
+
+  // 科目の進捗状況を計算する関数
+  const calculateSubjectProgress = (subject: Subject, semesterData: any): SubjectProgressInfo => {
+    if (!semesterData?.groups) {
+      return {
+        subjectId: subject.id,
+        totalRequired: subject.totalClasses,
+        scheduledCount: 0,
+        completionRate: 0,
+        missingFromGroups: []
+      };
+    }
+
+    const targetGroups = getTargetGroups(subject);
+    let totalScheduled = 0;
+    const missingFromGroups: string[] = [];
+
+    targetGroups.forEach(groupKey => {
+      const group = semesterData.groups[groupKey];
+      if (group) {
+        const scheduledInGroup = group.schedule.filter((entry: any) => 
+          entry.subjectName === subject.name || entry.subjectId === subject.id
+        ).length;
+        
+        if (scheduledInGroup === 0) {
+          missingFromGroups.push(group.name);
+        } else if (subject.department === '共通' && subject.lessonType === '合同') {
+          // 全学年合同の場合、一つのグループにスケジュールされていればOK
+          totalScheduled = Math.max(totalScheduled, scheduledInGroup);
+        } else if (subject.department === '共通') {
+          // 共通科目の場合、同学年の複数学科で同じ授業が実施されるので、最大値を取る
+          totalScheduled = Math.max(totalScheduled, scheduledInGroup);
+        } else {
+          totalScheduled += scheduledInGroup;
+        }
+      }
+    });
+
+    const completionRate = subject.totalClasses > 0 ? (totalScheduled / subject.totalClasses) * 100 : 0;
+
+    return {
+      subjectId: subject.id,
+      totalRequired: subject.totalClasses,
+      scheduledCount: totalScheduled,
+      completionRate: Math.min(completionRate, 100),
+      missingFromGroups
+    };
+  };
+
+  // 対象となるグループを取得
+  const getTargetGroups = (subject: Subject): string[] => {
+    if (subject.department === '共通' && subject.lessonType === '合同') {
+      // 全学年合同の場合、すべてのグループ
+      return ['it-1', 'it-2', 'tourism-1', 'tourism-2'];
+    } else if (subject.department === '共通') {
+      // 共通科目の場合、同学年の両学科
+      if (subject.grade === '1年') {
+        return ['it-1', 'tourism-1'];
+      } else {
+        return ['it-2', 'tourism-2'];
+      }
+    } else {
+      // 学科別科目の場合
+      if (subject.department === 'ITソリューション') {
+        return subject.grade === '1年' ? ['it-1'] : ['it-2'];
+      } else {
+        return subject.grade === '1年' ? ['tourism-1'] : ['tourism-2'];
+      }
+    }
+  };
 
   const handleSubmit = () => {
     if (formData.name && formData.teacherIds?.length && formData.availableClassroomIds?.length) {
@@ -204,17 +321,55 @@ const SubjectManager = ({
             .map(id => classrooms.find(c => c.id === id)?.name)
             .filter(Boolean)
             .join(', ');
+          
+          const progress = subjectProgress.get(subject.id);
+          const isComplete = progress && progress.completionRate >= 100;
+          const isPartial = progress && progress.completionRate > 0 && progress.completionRate < 100;
+          const isEmpty = !progress || progress.scheduledCount === 0;
 
           return (
-            <div key={subject.id} className="subject-card">
+            <div key={subject.id} className={`subject-card ${isComplete ? 'complete' : isPartial ? 'partial' : 'empty'}`}>
               <div className="subject-info">
-                <h3>{subject.name}</h3>
+                <div className="subject-header">
+                  <h3>{subject.name}</h3>
+                  <div className="progress-indicator">
+                    {isComplete && <CheckCircle size={20} className="status-complete" />}
+                    {isPartial && <Clock size={20} className="status-partial" />}
+                    {isEmpty && <AlertCircle size={20} className="status-empty" />}
+                  </div>
+                </div>
+                
                 <div className="subject-meta">
                   <span className="badge">{subject.department}</span>
                   <span className="badge">{subject.grade}</span>
                   <span className="badge">{subject.lessonType}</span>
                   <span className="badge">全{subject.totalClasses}コマ</span>
                 </div>
+
+                {/* 進捗表示 */}
+                {progress && (
+                  <div className="progress-section">
+                    <div className="progress-bar-container">
+                      <div className="progress-bar">
+                        <div 
+                          className="progress-fill" 
+                          style={{ width: `${progress.completionRate}%` }}
+                        />
+                      </div>
+                      <div className="progress-text">
+                        {progress.scheduledCount}/{progress.totalRequired}コマ ({Math.round(progress.completionRate)}%)
+                      </div>
+                    </div>
+                    
+                    {progress.missingFromGroups.length > 0 && (
+                      <div className="missing-groups">
+                        <span className="missing-label">未反映:</span>
+                        <span className="missing-list">{progress.missingFromGroups.join(', ')}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="subject-details">
                   <div>教師: {teacherNames}</div>
                   <div>教室: {classroomNames}</div>

@@ -622,6 +622,98 @@ body {
   transition: all 0.3s ease;
 }
 
+/* Subject Manager - Progress Tracking */
+.subject-card.complete {
+  border-left: 4px solid #10b981;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+}
+
+.subject-card.partial {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+}
+
+.subject-card.empty {
+  border-left: 4px solid #ef4444;
+  background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+}
+
+.subject-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.progress-indicator .status-complete {
+  color: #10b981;
+}
+
+.progress-indicator .status-partial {
+  color: #f59e0b;
+}
+
+.progress-indicator .status-empty {
+  color: #ef4444;
+}
+
+.progress-section {
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  background: rgba(248, 250, 252, 0.5);
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.progress-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  min-width: 120px;
+  text-align: right;
+}
+
+.missing-groups {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.missing-label {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.missing-list {
+  color: #6b7280;
+  background: #fef2f2;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #fca5a5;
+}
+
 .teacher-card:hover,
 .subject-card:hover,
 .classroom-card:hover {
