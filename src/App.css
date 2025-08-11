@@ -789,39 +789,11 @@ body {
   margin-bottom: 1.5rem;
 }
 
-/* 教師追加フォーム全体のレイアウト */
-.teacher-add-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  max-width: 100%;
-}
-
-.teacher-form-left {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.teacher-form-right {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 1.5rem;
-}
-
+/* 教師追加フォーム全体のレイアウト - 元に戻す */
 .constraint-form {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-}
-
-/* レスポンシブ対応 */
-@media (max-width: 1024px) {
-  .teacher-add-form {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
 }
 
 .constraint-form h4 {
