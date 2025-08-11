@@ -250,43 +250,48 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
         <div className="form-card advanced-form wide-layout">
           <h3>{editingId ? '教師情報編集' : '新規教師登録'}</h3>
           
-          {/* 基本情報 */}
-          <div className="basic-info-section">
-            <div className="form-row">
-              <div className="form-group">
-                <label>教師名</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="例: 山田 太郎"
-                />
+          <div className="teacher-add-form">
+            {/* 左側：基本情報 */}
+            <div className="teacher-form-left">
+              <div className="basic-info-section">
+                <h4>👤 基本情報</h4>
+                <div className="form-group">
+                  <label>教師名</label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="例: 山田 太郎"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>雇用形態</label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as TeacherType })}
+                  >
+                    <option value="常勤">常勤</option>
+                    <option value="非常勤">非常勤</option>
+                  </select>
+                </div>
               </div>
-              <div className="form-group">
-                <label>雇用形態</label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as TeacherType })}
-                >
-                  <option value="常勤">常勤</option>
-                  <option value="非常勤">非常勤</option>
-                </select>
+              
+              <div className="form-actions">
+                <button className="btn-secondary" onClick={handleCancel}>
+                  <X size={20} />
+                  キャンセル
+                </button>
+                <button className="btn-primary" onClick={handleSubmit}>
+                  <Save size={20} />
+                  保存
+                </button>
               </div>
             </div>
-          </div>
 
-          {/* 制約条件フォーム */}
-          {renderConstraintForm()}
-
-          <div className="form-actions">
-            <button className="btn-secondary" onClick={handleCancel}>
-              <X size={20} />
-              キャンセル
-            </button>
-            <button className="btn-primary" onClick={handleSubmit}>
-              <Save size={20} />
-              保存
-            </button>
+            {/* 右側：制約条件 */}
+            <div className="teacher-form-right">
+              {renderConstraintForm()}
+            </div>
           </div>
         </div>
       )}
