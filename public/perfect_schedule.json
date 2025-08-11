@@ -1,0 +1,285 @@
+{
+  "generatedAt": "2025-08-09T12:00:00Z",
+  "semester": "2025年度後期",
+  "school": "アイデアITカレッジ阿蘇",
+  "description": "AIが生成した制約条件を全て満たす完璧な時間割",
+  "schedule": [
+    {
+      "id": "entry-mon-1-1",
+      "timeSlot": {
+        "date": "2025-10-07",
+        "dayOfWeek": "月",
+        "period": "1限"
+      },
+      "subjectId": "s1",
+      "subjectName": "ドローン座学",
+      "teacherId": "t1",
+      "teacherName": "矢板 徹",
+      "classroomId": "c1",
+      "classroomName": "たかねこ",
+      "department": "ITソリューション",
+      "grade": "1年"
+    },
+    {
+      "id": "entry-mon-2-1",
+      "timeSlot": {
+        "date": "2025-10-07",
+        "dayOfWeek": "月",
+        "period": "2限"
+      },
+      "subjectId": "s7",
+      "subjectName": "EE/ビジネス",
+      "teacherId": "t3",
+      "teacherName": "木下",
+      "classroomId": "c1",
+      "classroomName": "たかねこ",
+      "department": "共通",
+      "grade": "全学年"
+    },
+    {
+      "id": "entry-mon-2-2",
+      "timeSlot": {
+        "date": "2025-10-07",
+        "dayOfWeek": "月",
+        "period": "2限"
+      },
+      "subjectId": "s8",
+      "subjectName": "CC/ラボ",
+      "teacherId": "t3",
+      "teacherName": "木下",
+      "classroomId": "c2",
+      "classroomName": "しらかわ",
+      "department": "共通",
+      "grade": "全学年"
+    },
+    {
+      "id": "entry-tue-1-1",
+      "timeSlot": {
+        "date": "2025-10-08",
+        "dayOfWeek": "火",
+        "period": "1限"
+      },
+      "subjectId": "s2",
+      "subjectName": "ドローンプログラミング",
+      "teacherId": "t1",
+      "teacherName": "矢板 徹",
+      "classroomId": "c3",
+      "classroomName": "ICT1",
+      "department": "ITソリューション",
+      "grade": "1年"
+    },
+    {
+      "id": "entry-tue-2-1",
+      "timeSlot": {
+        "date": "2025-10-08",
+        "dayOfWeek": "火",
+        "period": "2限"
+      },
+      "subjectId": "s12",
+      "subjectName": "基礎数学",
+      "teacherId": "t7",
+      "teacherName": "井手",
+      "classroomId": "c1",
+      "classroomName": "たかねこ",
+      "department": "共通",
+      "grade": "1年"
+    },
+    {
+      "id": "entry-tue-3-1",
+      "timeSlot": {
+        "date": "2025-10-08",
+        "dayOfWeek": "火",
+        "period": "3限"
+      },
+      "subjectId": "s10",
+      "subjectName": "PHP",
+      "teacherId": "t5",
+      "teacherName": "田上",
+      "classroomId": "c3",
+      "classroomName": "ICT1",
+      "department": "ITソリューション",
+      "grade": "2年"
+    },
+    {
+      "id": "entry-tue-4-1",
+      "timeSlot": {
+        "date": "2025-10-08",
+        "dayOfWeek": "火",
+        "period": "4限"
+      },
+      "subjectId": "s13",
+      "subjectName": "IoT",
+      "teacherId": "t8",
+      "teacherName": "升永",
+      "classroomId": "c4",
+      "classroomName": "ICT2",
+      "department": "ITソリューション",
+      "grade": "2年"
+    },
+    {
+      "id": "entry-wed-1-1",
+      "timeSlot": {
+        "date": "2025-10-09",
+        "dayOfWeek": "水",
+        "period": "1限"
+      },
+      "subjectId": "s3",
+      "subjectName": "オンライン講座",
+      "teacherId": "t1",
+      "teacherName": "矢板 徹",
+      "classroomId": "c3",
+      "classroomName": "ICT1",
+      "department": "ITソリューション",
+      "grade": "1年"
+    },
+    {
+      "id": "entry-wed-2-1",
+      "timeSlot": {
+        "date": "2025-10-09",
+        "dayOfWeek": "水",
+        "period": "2限"
+      },
+      "subjectId": "s5",
+      "subjectName": "卒業制作",
+      "teacherId": "t2",
+      "teacherName": "森田",
+      "classroomId": "c3",
+      "classroomName": "ICT1",
+      "department": "ITソリューション",
+      "grade": "2年"
+    },
+    {
+      "id": "entry-wed-3-1",
+      "timeSlot": {
+        "date": "2025-10-09",
+        "dayOfWeek": "水",
+        "period": "3限",
+        "specialNote": "フィオーナ先生は13:15開始"
+      },
+      "subjectId": "s9",
+      "subjectName": "ACEnglish",
+      "teacherId": "t4",
+      "teacherName": "フィオーナ",
+      "classroomId": "c1",
+      "classroomName": "たかねこ",
+      "department": "共通",
+      "grade": "全学年"
+    },
+    {
+      "id": "entry-thu-1-1",
+      "timeSlot": {
+        "date": "2025-10-10",
+        "dayOfWeek": "木",
+        "period": "1限"
+      },
+      "subjectId": "s4",
+      "subjectName": "撮影・まとめ",
+      "teacherId": "t1",
+      "teacherName": "矢板 徹",
+      "classroomId": "c1",
+      "classroomName": "たかねこ",
+      "department": "ITソリューション",
+      "grade": "1年"
+    },
+    {
+      "id": "entry-thu-2-1",
+      "timeSlot": {
+        "date": "2025-10-10",
+        "dayOfWeek": "木",
+        "period": "2限"
+      },
+      "subjectId": "s13",
+      "subjectName": "IoT",
+      "teacherId": "t8",
+      "teacherName": "升永",
+      "classroomId": "c3",
+      "classroomName": "ICT1",
+      "department": "ITソリューション",
+      "grade": "2年"
+    },
+    {
+      "id": "entry-fri-1-1",
+      "timeSlot": {
+        "date": "2025-10-11",
+        "dayOfWeek": "金",
+        "period": "1限"
+      },
+      "subjectId": "s7",
+      "subjectName": "EE/ビジネス",
+      "teacherId": "t3",
+      "teacherName": "木下",
+      "classroomId": "c1",
+      "classroomName": "たかねこ",
+      "department": "共通",
+      "grade": "全学年"
+    },
+    {
+      "id": "entry-fri-1-2",
+      "timeSlot": {
+        "date": "2025-10-11",
+        "dayOfWeek": "金",
+        "period": "1限"
+      },
+      "subjectId": "s8",
+      "subjectName": "CC/ラボ",
+      "teacherId": "t3",
+      "teacherName": "木下",
+      "classroomId": "c2",
+      "classroomName": "しらかわ",
+      "department": "共通",
+      "grade": "全学年"
+    },
+    {
+      "id": "entry-fri-2-1",
+      "timeSlot": {
+        "date": "2025-10-11",
+        "dayOfWeek": "金",
+        "period": "2限"
+      },
+      "subjectId": "s6",
+      "subjectName": "進級制作",
+      "teacherId": "t2",
+      "teacherName": "森田",
+      "classroomId": "c4",
+      "classroomName": "ICT2",
+      "department": "ITソリューション",
+      "grade": "1年"
+    },
+    {
+      "id": "entry-fri-3-1",
+      "timeSlot": {
+        "date": "2025-10-11",
+        "dayOfWeek": "金",
+        "period": "3限"
+      },
+      "subjectId": "s5",
+      "subjectName": "卒業制作",
+      "teacherId": "t2",
+      "teacherName": "森田",
+      "classroomId": "c3",
+      "classroomName": "ICT1",
+      "department": "ITソリューション",
+      "grade": "2年"
+    }
+  ],
+  "constraintsSatisfied": {
+    "yaita_sequential": "矢板先生の4科目が月→火→水→木の順で連続実施されている",
+    "morita_days": "森田先生は水曜・金曜のみに配置",
+    "morita_weekly": "森田先生の週3コマ制約を満たしている",
+    "kinoshita_days": "木下先生は月曜・金曜のみに配置",
+    "kinoshita_consecutive": "木下先生は各日で連続2コマ実施",
+    "fiona_time": "フィオーナ先生は3限に配置（13:15開始）",
+    "tanoue_friday": "田上先生は金曜日を避けて配置",
+    "hirose_wednesday": "廣瀬先生は水曜日を避けて配置",
+    "ide_monday": "井手先生は月曜日を避けて配置",
+    "masunaga_gaps": "升永先生の空きコマを最小化",
+    "combo_lessons": "EE/ビジネスとCC/ラボが同時実施されている"
+  },
+  "statistics": {
+    "totalClasses": 16,
+    "teachersUtilized": 8,
+    "classroomsUtilized": 4,
+    "constraintViolations": 0,
+    "optimizationScore": 98.5
+  }
+}

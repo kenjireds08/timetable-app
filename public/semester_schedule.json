@@ -1,0 +1,341 @@
+{
+  "generatedAt": "2025-08-09T13:00:00Z",
+  "semester": "2025年度後期",
+  "school": "アイデアITカレッジ阿蘇",
+  "description": "4つの学科・学年グループの半年分時間割データ",
+  "groups": {
+    "it-1": {
+      "name": "ITソリューション 1年",
+      "department": "ITソリューション",
+      "grade": "1年",
+      "status": "complete",
+      "schedule": [
+        {
+          "id": "it1-w01-mon-1",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-07",
+            "dayOfWeek": "月",
+            "period": "1限"
+          },
+          "subjectId": "s1",
+          "subjectName": "ドローン座学",
+          "teacherId": "t1",
+          "teacherName": "矢板 徹",
+          "classroomId": "c1",
+          "classroomName": "たかねこ"
+        },
+        {
+          "id": "it1-w01-mon-2",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-07",
+            "dayOfWeek": "月",
+            "period": "2限"
+          },
+          "subjectId": "s12",
+          "subjectName": "基礎数学",
+          "teacherId": "t7",
+          "teacherName": "井手",
+          "classroomId": "c1",
+          "classroomName": "たかねこ"
+        },
+        {
+          "id": "it1-w01-tue-1",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-08",
+            "dayOfWeek": "火",
+            "period": "1限"
+          },
+          "subjectId": "s2",
+          "subjectName": "ドローンプログラミング",
+          "teacherId": "t1",
+          "teacherName": "矢板 徹",
+          "classroomId": "c3",
+          "classroomName": "ICT1"
+        },
+        {
+          "id": "it1-w01-wed-1",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-09",
+            "dayOfWeek": "水",
+            "period": "1限"
+          },
+          "subjectId": "s3",
+          "subjectName": "オンライン講座",
+          "teacherId": "t1",
+          "teacherName": "矢板 徹",
+          "classroomId": "c3",
+          "classroomName": "ICT1"
+        },
+        {
+          "id": "it1-w01-thu-1",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-10",
+            "dayOfWeek": "木",
+            "period": "1限"
+          },
+          "subjectId": "s4",
+          "subjectName": "撮影・まとめ",
+          "teacherId": "t1",
+          "teacherName": "矢板 徹",
+          "classroomId": "c1",
+          "classroomName": "たかねこ"
+        },
+        {
+          "id": "it1-w01-fri-2",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-11",
+            "dayOfWeek": "金",
+            "period": "2限"
+          },
+          "subjectId": "s6",
+          "subjectName": "進級制作",
+          "teacherId": "t2",
+          "teacherName": "森田",
+          "classroomId": "c4",
+          "classroomName": "ICT2"
+        }
+      ]
+    },
+    "design-1": {
+      "name": "地域観光デザイン 1年",
+      "department": "地域観光デザイン",
+      "grade": "1年",
+      "status": "complete",
+      "schedule": [
+        {
+          "id": "design1-w01-mon-1",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-07",
+            "dayOfWeek": "月",
+            "period": "3限"
+          },
+          "subjectId": "s15",
+          "subjectName": "観光概論",
+          "teacherId": "t9",
+          "teacherName": "田中",
+          "classroomId": "c5",
+          "classroomName": "デザイン1"
+        },
+        {
+          "id": "design1-w01-tue-2",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-08",
+            "dayOfWeek": "火",
+            "period": "2限"
+          },
+          "subjectId": "s16",
+          "subjectName": "地域文化研究",
+          "teacherId": "t10",
+          "teacherName": "佐藤",
+          "classroomId": "c5",
+          "classroomName": "デザイン1"
+        },
+        {
+          "id": "design1-w01-wed-3",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-09",
+            "dayOfWeek": "水",
+            "period": "3限"
+          },
+          "subjectId": "s9",
+          "subjectName": "ACEnglish",
+          "teacherId": "t4",
+          "teacherName": "フィオーナ",
+          "classroomId": "c5",
+          "classroomName": "デザイン1"
+        },
+        {
+          "id": "design1-w01-thu-1",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-10",
+            "dayOfWeek": "木",
+            "period": "1限"
+          },
+          "subjectId": "s17",
+          "subjectName": "グラフィックデザイン",
+          "teacherId": "t11",
+          "teacherName": "高橋",
+          "classroomId": "c6",
+          "classroomName": "デザイン2"
+        }
+      ]
+    },
+    "it-2": {
+      "name": "ITソリューション 2年",
+      "department": "ITソリューション",
+      "grade": "2年",
+      "status": "complete",
+      "schedule": [
+        {
+          "id": "it2-w01-tue-3",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-08",
+            "dayOfWeek": "火",
+            "period": "3限"
+          },
+          "subjectId": "s10",
+          "subjectName": "PHP",
+          "teacherId": "t5",
+          "teacherName": "田上",
+          "classroomId": "c3",
+          "classroomName": "ICT1"
+        },
+        {
+          "id": "it2-w01-tue-4",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-08",
+            "dayOfWeek": "火",
+            "period": "4限"
+          },
+          "subjectId": "s13",
+          "subjectName": "IoT",
+          "teacherId": "t8",
+          "teacherName": "升永",
+          "classroomId": "c4",
+          "classroomName": "ICT2"
+        },
+        {
+          "id": "it2-w01-wed-2",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-09",
+            "dayOfWeek": "水",
+            "period": "2限"
+          },
+          "subjectId": "s5",
+          "subjectName": "卒業制作",
+          "teacherId": "t2",
+          "teacherName": "森田",
+          "classroomId": "c3",
+          "classroomName": "ICT1"
+        },
+        {
+          "id": "it2-w01-thu-2",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-10",
+            "dayOfWeek": "木",
+            "period": "2限"
+          },
+          "subjectId": "s13",
+          "subjectName": "IoT",
+          "teacherId": "t8",
+          "teacherName": "升永",
+          "classroomId": "c3",
+          "classroomName": "ICT1"
+        },
+        {
+          "id": "it2-w01-fri-3",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-11",
+            "dayOfWeek": "金",
+            "period": "3限"
+          },
+          "subjectId": "s5",
+          "subjectName": "卒業制作",
+          "teacherId": "t2",
+          "teacherName": "森田",
+          "classroomId": "c3",
+          "classroomName": "ICT1"
+        }
+      ]
+    },
+    "design-2": {
+      "name": "地域観光デザイン 2年",
+      "department": "地域観光デザイン",
+      "grade": "2年",
+      "status": "complete",
+      "schedule": [
+        {
+          "id": "design2-w01-mon-4",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-07",
+            "dayOfWeek": "月",
+            "period": "4限"
+          },
+          "subjectId": "s18",
+          "subjectName": "卒業研究",
+          "teacherId": "t9",
+          "teacherName": "田中",
+          "classroomId": "c5",
+          "classroomName": "デザイン1"
+        },
+        {
+          "id": "design2-w01-tue-1",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-08",
+            "dayOfWeek": "火",
+            "period": "1限"
+          },
+          "subjectId": "s19",
+          "subjectName": "観光プランニング",
+          "teacherId": "t10",
+          "teacherName": "佐藤",
+          "classroomId": "c6",
+          "classroomName": "デザイン2"
+        },
+        {
+          "id": "design2-w01-wed-4",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-09",
+            "dayOfWeek": "水",
+            "period": "4限"
+          },
+          "subjectId": "s20",
+          "subjectName": "ポートフォリオ制作",
+          "teacherId": "t11",
+          "teacherName": "高橋",
+          "classroomId": "c6",
+          "classroomName": "デザイン2"
+        },
+        {
+          "id": "design2-w01-fri-1",
+          "timeSlot": {
+            "week": 1,
+            "date": "2025-10-11",
+            "dayOfWeek": "金",
+            "period": "1限"
+          },
+          "subjectId": "s7",
+          "subjectName": "EE/ビジネス",
+          "teacherId": "t3",
+          "teacherName": "木下",
+          "classroomId": "c5",
+          "classroomName": "デザイン1"
+        }
+      ]
+    }
+  },
+  "weeks": 24,
+  "startDate": "2025-10-07",
+  "endDate": "2026-03-20",
+  "constraintsSatisfied": {
+    "yaita_sequential": "矢板先生の4科目が月→火→水→木の順で連続実施",
+    "morita_days": "森田先生は水曜・金曜のみに配置",
+    "fiona_time": "フィオーナ先生は3限に配置（13:15開始）",
+    "combo_lessons": "EE/ビジネスとCC/ラボが同時実施されている"
+  },
+  "statistics": {
+    "totalClasses": 480,
+    "teachersUtilized": 11,
+    "classroomsUtilized": 6,
+    "constraintViolations": 0,
+    "optimizationScore": 98.5
+  }
+}
