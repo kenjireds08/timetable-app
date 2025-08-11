@@ -1355,6 +1355,25 @@ body {
   color: #92400e;
 }
 
+/* Semester Summary Styles */
+.semester-summary {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.current-tab-summary {
+  text-align: center;
+}
+
+.total-classes-text {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
 /* Semester Timetable */
 .semester-timetable {
   width: 100%;

@@ -598,6 +598,11 @@ const SemesterTimetable = ({
     return acc;
   }, {} as {[key: string]: string});
 
+  // 各グループの総授業数を計算
+  const getGroupTotalClasses = (groupKey: string) => {
+    return semesterData.groups[groupKey].schedule.length;
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="semester-timetable">
@@ -720,6 +725,13 @@ const SemesterTimetable = ({
                 </div>
               );
             })}
+          </div>
+
+          {/* Current Tab Summary */}
+          <div className="semester-summary">
+            <div className="current-tab-summary">
+              <span className="total-classes-text">総授業数: {getGroupTotalClasses(activeTab)}コマ</span>
+            </div>
           </div>
 
           {/* Export Controls */}
