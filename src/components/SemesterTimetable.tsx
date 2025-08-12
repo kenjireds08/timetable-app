@@ -693,10 +693,18 @@ const SemesterTimetable = ({
                                 return dayOrder[a.timeSlot.dayOfWeek] - dayOrder[b.timeSlot.dayOfWeek];
                               });
 
+                            // 科目管理から正しい総コマ数を取得
+                            const matchingSubject = _subjects.find(s => {
+                              // 科目名の完全一致または、コンビ授業の場合の部分一致
+                              const cleanSubjectName = entry.subjectName.replace(' [コンビ]', '');
+                              return s.name === cleanSubjectName || s.name === entry.subjectName;
+                            });
+                            
+                            const totalClasses = matchingSubject ? matchingSubject.totalClasses : sameSubjectEntries.length;
                             const currentIndex = sameSubjectEntries.findIndex(e => e.id === entry.id);
                             const progressInfo = {
                               current: currentIndex + 1,
-                              total: sameSubjectEntries.length
+                              total: totalClasses
                             };
 
                             return { entry, progressInfo };

@@ -94,26 +94,40 @@ const SubjectManager = ({
     let totalScheduled = 0;
     const missingFromGroups: string[] = [];
 
+    // 各グループでのスケジュール数を収集
+    const groupScheduleCounts: number[] = [];
+    
     targetGroups.forEach(groupKey => {
       const group = semesterData.groups[groupKey];
       if (group) {
-        const scheduledInGroup = group.schedule.filter((entry: any) => 
-          entry.subjectName === subject.name || entry.subjectId === subject.id
-        ).length;
+        const scheduledInGroup = group.schedule.filter((entry: any) => {
+          // 科目名の正確なマッチング（コンビ授業の表記違いを考慮）
+          const cleanEntryName = entry.subjectName.replace(' [コンビ]', '');
+          const cleanSubjectName = subject.name.replace(' [コンビ]', '');
+          return cleanEntryName === cleanSubjectName || 
+                 entry.subjectName === subject.name || 
+                 entry.subjectId === subject.id;
+        }).length;
         
         if (scheduledInGroup === 0) {
           missingFromGroups.push(group.name);
-        } else if (subject.department === '共通' && subject.lessonType === '合同') {
-          // 全学年合同の場合、一つのグループにスケジュールされていればOK
-          totalScheduled = Math.max(totalScheduled, scheduledInGroup);
-        } else if (subject.department === '共通') {
-          // 共通科目の場合、同学年の複数学科で同じ授業が実施されるので、最大値を取る
-          totalScheduled = Math.max(totalScheduled, scheduledInGroup);
-        } else {
-          totalScheduled += scheduledInGroup;
         }
+        
+        groupScheduleCounts.push(scheduledInGroup);
       }
     });
+
+    // 科目の種類に応じて総スケジュール数を計算
+    if (subject.department === '共通' && subject.lessonType === '合同') {
+      // 全学年合同の場合、すべてのグループで同じ授業が実施されるので、最大値を取る
+      totalScheduled = Math.max(...groupScheduleCounts, 0);
+    } else if (subject.department === '共通') {
+      // 共通科目の場合、同学年の複数学科で同じ授業が実施されるので、最大値を取る
+      totalScheduled = Math.max(...groupScheduleCounts, 0);
+    } else {
+      // 学科別科目の場合、単純に合計
+      totalScheduled = groupScheduleCounts.reduce((sum, count) => sum + count, 0);
+    }
 
     const completionRate = subject.totalClasses > 0 ? (totalScheduled / subject.totalClasses) * 100 : 0;
 
