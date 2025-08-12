@@ -161,6 +161,7 @@ export class AutoScheduleGenerator {
         if (targetSessionsThisWeek === 0) continue; // この週はスキップ
         
         let weeklyPlaced = 0;
+        let failureReasons = []; // 配置失敗の理由を記録
 
         // 科目ごとに使用する曜日を決定
         let availableDays = [...daysOfWeek];
@@ -198,24 +199,33 @@ export class AutoScheduleGenerator {
                 const slotKey = `${week}-${day}-${period}`;
                 
                 // スロットが使用済みかチェック
-                if (this.usedSlots.has(`${group.id}-${slotKey}`)) continue;
+                if (this.usedSlots.has(`${group.id}-${slotKey}`)) {
+                  failureReasons.push(`${day}${period}: スロット使用済み`);
+                  continue;
+                }
 
                 // 休日チェック
-                if (this.isHoliday(week, day, options.startDate)) continue;
+                if (this.isHoliday(week, day, options.startDate)) {
+                  failureReasons.push(`${day}${period}: 休日`);
+                  continue;
+                }
 
                 // スケジュール調整要求チェック
-                if (this.isScheduleRequestViolated(week, day, period, options.startDate)) continue;
+                if (this.isScheduleRequestViolated(week, day, period, options.startDate)) {
+                  failureReasons.push(`${day}${period}: スケジュール調整要求制約`);
+                  continue;
+                }
 
                 // 教師の制約をチェック（グローバルで他グループとの重複もチェック）
                 const teacher = this.getAvailableTeacher(subject, week, day, period);
                 if (!teacher) {
-                  console.log(`  ${subject.name}: 教師制約で配置不可`);
+                  failureReasons.push(`${day}${period}: 教師制約(利用不可/上限到達)`);
                   continue;
                 }
                 
                 // より厳密な教師重複チェック
                 if (this.isTeacherBusyGlobally(teacher.id, week, day, period)) {
-                  console.log(`❌ ${teacher.name}先生は${day}曜日${period}に他のグループで授業中`);
+                  failureReasons.push(`${day}${period}: ${teacher.name}先生他グループで使用中`);
                   continue;
                 }
 
@@ -224,7 +234,7 @@ export class AutoScheduleGenerator {
                   // 教室の制約をチェック
                   const classroom = this.getAvailableClassroom(subject, week, day, period);
                   if (!classroom) {
-                    console.log(`  ${subject.name}: 教室制約で配置不可`);
+                    failureReasons.push(`${day}${period}: 教室制約(利用可能教室なし/使用中)`);
                     continue;
                   }
 

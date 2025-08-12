@@ -8,6 +8,7 @@ interface SubjectProgressInfo {
   scheduledCount: number;
   completionRate: number;
   missingFromGroups: string[];
+  failureReasons?: string[]; // 配置失敗の理由を追加
 }
 
 interface SubjectManagerProps {
@@ -78,6 +79,63 @@ const SubjectManager = ({
     setSubjectProgress(progressMap);
   }, [subjects, semesterData]);
 
+  // 配置失敗の理由を分析する関数
+  const analyzeFailureReasons = (subject: Subject, semesterData: any): string[] => {
+    const reasons: string[] = [];
+    
+    // 担当教師の制約を分析
+    const subjectTeachers = teachers.filter(t => subject.teacherIds.includes(t.id));
+    
+    for (const teacher of subjectTeachers) {
+      const constraints = teacher.constraints;
+      if (!constraints) continue;
+      
+      // 利用不可曜日
+      if (constraints.unavailableDays && constraints.unavailableDays.length > 0) {
+        const unavailableDaysJa = constraints.unavailableDays.map(d => {
+          const dayMap: { [key: string]: string } = {
+            'monday': '月', 'tuesday': '火', 'wednesday': '水', 'thursday': '木', 'friday': '金'
+          };
+          return dayMap[d] || d;
+        }).join('・');
+        reasons.push(`${teacher.name}先生: ${unavailableDaysJa}曜日利用不可`);
+      }
+      
+      // 利用可能日制限
+      if (constraints.availableDays && constraints.availableDays.length < 5) {
+        const availableDaysJa = constraints.availableDays.map(d => {
+          const dayMap: { [key: string]: string } = {
+            'monday': '月', 'tuesday': '火', 'wednesday': '水', 'thursday': '木', 'friday': '金'
+          };
+          return dayMap[d] || d;
+        }).join('・');
+        reasons.push(`${teacher.name}先生: ${availableDaysJa}曜日のみ利用可能`);
+      }
+      
+      // 週最大コマ数制限
+      if (constraints.maxClassesPerWeek) {
+        reasons.push(`${teacher.name}先生: 週最大${constraints.maxClassesPerWeek}コマ制限`);
+      }
+      
+      // 日最大コマ数制限
+      if (constraints.maxClassesPerDay) {
+        reasons.push(`${teacher.name}先生: 1日最大${constraints.maxClassesPerDay}コマ制限`);
+      }
+    }
+    
+    // 利用可能教室の制約
+    if (subject.availableClassroomIds && subject.availableClassroomIds.length > 0) {
+      const availableClassrooms = classrooms.filter(c => 
+        subject.availableClassroomIds!.includes(c.id)
+      );
+      if (availableClassrooms.length <= 2) {
+        reasons.push(`利用可能教室限定: ${availableClassrooms.map(c => c.name).join('・')}`);
+      }
+    }
+    
+    return reasons;
+  };
+
   // 科目の進捗状況を計算する関数
   const calculateSubjectProgress = (subject: Subject, semesterData: any): SubjectProgressInfo => {
     if (!semesterData?.groups) {
@@ -130,13 +188,17 @@ const SubjectManager = ({
     }
 
     const completionRate = subject.totalClasses > 0 ? (totalScheduled / subject.totalClasses) * 100 : 0;
+    
+    // 未完了の場合、失敗理由を分析
+    const failureReasons = completionRate < 100 ? analyzeFailureReasons(subject, semesterData) : [];
 
     return {
       subjectId: subject.id,
       totalRequired: subject.totalClasses,
       scheduledCount: totalScheduled,
       completionRate: Math.min(completionRate, 100),
-      missingFromGroups
+      missingFromGroups,
+      failureReasons
     };
   };
 
@@ -379,6 +441,22 @@ const SubjectManager = ({
                       <div className="missing-groups">
                         <span className="missing-label">未反映:</span>
                         <span className="missing-list">{progress.missingFromGroups.join(', ')}</span>
+                      </div>
+                    )}
+                    
+                    {progress.failureReasons && progress.failureReasons.length > 0 && progress.completionRate < 100 && (
+                      <div className="failure-reasons">
+                        <div className="failure-reasons-header">
+                          <span className="failure-label">🚫 配置制約:</span>
+                        </div>
+                        <div className="failure-reasons-list">
+                          {progress.failureReasons.slice(0, 3).map((reason, index) => (
+                            <div key={index} className="failure-reason-item">{reason}</div>
+                          ))}
+                          {progress.failureReasons.length > 3 && (
+                            <div className="failure-reason-more">他{progress.failureReasons.length - 3}件</div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

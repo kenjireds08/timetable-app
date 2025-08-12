@@ -714,6 +714,47 @@ body {
   border: 1px solid #fca5a5;
 }
 
+.failure-reasons {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #fef3c7;
+  border-radius: 4px;
+  border: 1px solid #f59e0b;
+}
+
+.failure-reasons-header {
+  margin-bottom: 0.25rem;
+}
+
+.failure-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.failure-reasons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.failure-reason-item {
+  font-size: 0.7rem;
+  color: #78350f;
+  background: rgba(252, 211, 77, 0.3);
+  padding: 0.125rem 0.375rem;
+  border-radius: 3px;
+  line-height: 1.2;
+}
+
+.failure-reason-more {
+  font-size: 0.7rem;
+  color: #92400e;
+  font-style: italic;
+  text-align: right;
+  margin-top: 0.125rem;
+}
+
 .teacher-card:hover,
 .subject-card:hover,
 .classroom-card:hover {
