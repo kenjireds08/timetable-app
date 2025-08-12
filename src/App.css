@@ -1748,12 +1748,13 @@ body {
 
 .entry-progress {
   font-size: 0.6rem;
-  color: #6b7280;
-  background: #f3f4f6;
+  color: rgba(75, 85, 99, 0.8);
+  background: rgba(255, 255, 255, 0.3);
   padding: 0.05rem 0.2rem;
   border-radius: 2px;
   white-space: nowrap;
   font-weight: 500;
+  backdrop-filter: blur(2px);
 }
 
 .entry-details {
@@ -2517,6 +2518,8 @@ body {
 .semester-entry.combo-class {
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
   border: 2px solid #f59e0b;
+  color: #92400e;
+  font-weight: 500;
 }
 
 .combo-indicator {
@@ -2525,8 +2528,62 @@ body {
 }
 
 .semester-entry.combo-class:hover {
-  background: linear-gradient(135deg, #fde68a 0%, #facc15 100%);
-  box-shadow: 0 2px 12px rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
+  box-shadow: 0 2px 12px rgba(245, 158, 11, 0.2);
+}
+
+/* 共通科目のスタイル */
+.semester-entry.common-class {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 2px solid #3b82f6;
+  color: #1e40af;
+  font-weight: 500;
+}
+
+.common-indicator {
+  font-size: 0.8em;
+  margin-right: 0.15rem;
+}
+
+.semester-entry.common-class:hover {
+  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.2);
+}
+
+/* 合同授業のスタイル */
+.semester-entry.joint-class {
+  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+  border: 2px solid #8b5cf6;
+  color: #6b21a8;
+  font-weight: 500;
+}
+
+.joint-indicator {
+  font-size: 0.8em;
+  margin-right: 0.15rem;
+}
+
+.semester-entry.joint-class:hover {
+  background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%);
+  box-shadow: 0 2px 12px rgba(139, 92, 246, 0.2);
+}
+
+/* 専門科目のスタイル */
+.semester-entry.specialized-class {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 2px solid #10b981;
+  color: #065f46;
+  font-weight: 500;
+}
+
+.specialized-indicator {
+  font-size: 0.8em;
+  margin-right: 0.15rem;
+}
+
+.semester-entry.specialized-class:hover {
+  background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.2);
 }
 
 /* ドラッグ&ドロップの改善 */

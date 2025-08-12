@@ -15,6 +15,7 @@ export interface Teacher {
 export interface TeacherConstraints {
   availableDays?: DayOfWeek[];
   unavailableDays?: DayOfWeek[];
+  requiredPeriods?: TimeSlotPeriod[];  // 指定時限のみ利用可能（Fiona先生など）
   preferConsecutiveClasses?: boolean;
   specialTimeStart?: string;
   maxClassesPerDay?: number;
@@ -32,6 +33,10 @@ export interface TeacherConstraints {
   };
   prioritizeGapMinimization?: boolean;
   specialNotes?: string;
+  // 新しい制約オプション
+  weeklyGrouping?: boolean;        // 週単位でのまとめ授業
+  flexibleScheduling?: boolean;    // 柔軟なスケジューリング許可
+  changeUnavailable?: boolean;     // 変更対応困難
 }
 
 export interface Subject {
@@ -47,6 +52,14 @@ export interface Subject {
   comboSubjectName?: string;
   sequenceGroup?: string;
   specialRequirements?: string;
+  placementFailures?: PlacementFailure[];
+}
+
+export interface PlacementFailure {
+  reason: string;
+  unplacedCount: number;
+  totalCount: number;
+  details: string[];
 }
 
 export interface Classroom {

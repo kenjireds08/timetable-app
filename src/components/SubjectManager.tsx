@@ -159,12 +159,39 @@ const SubjectManager = ({
       const group = semesterData.groups[groupKey];
       if (group) {
         const scheduledInGroup = group.schedule.filter((entry: any) => {
-          // 科目名の正確なマッチング（コンビ授業の表記違いを考慮）
-          const cleanEntryName = entry.subjectName.replace(' [コンビ]', '');
-          const cleanSubjectName = subject.name.replace(' [コンビ]', '');
-          return cleanEntryName === cleanSubjectName || 
-                 entry.subjectName === subject.name || 
-                 entry.subjectId === subject.id;
+          // 科目名の正確なマッチング（全てのタグを考慮）
+          const cleanEntryName = entry.subjectName
+            .replace(' [コンビ]', '')
+            .replace(' [共通]', '')
+            .replace(' [合同]', '');
+          const cleanSubjectName = subject.name
+            .replace(' [コンビ]', '')
+            .replace(' [共通]', '')
+            .replace(' [合同]', '');
+          
+          // ローマ数字の正規化も追加
+          const normalizeRoman = (name: string) => {
+            return name
+              .replace(/\sI$/, ' Ⅰ')
+              .replace(/\sII$/, ' Ⅱ')
+              .replace(/\sIII$/, ' Ⅲ')
+              .replace(/\sⅠ$/, ' I')
+              .replace(/\sⅡ$/, ' II')
+              .replace(/\sⅢ$/, ' III');
+          };
+          
+          const normalizedEntry = normalizeRoman(cleanEntryName);
+          const normalizedSubject = normalizeRoman(cleanSubjectName);
+          
+          const isMatch = normalizedEntry === normalizedSubject || 
+                         entry.subjectName === subject.name || 
+                         entry.subjectId === subject.id;
+          
+          if (isMatch) {
+            console.log(`✅ 科目管理マッチ: "${entry.subjectName}" → "${subject.name}"`);
+          }
+          
+          return isMatch;
         }).length;
         
         if (scheduledInGroup === 0) {

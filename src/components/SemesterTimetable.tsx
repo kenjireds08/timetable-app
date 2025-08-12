@@ -52,11 +52,13 @@ interface SemesterTimetableProps {
 const DraggableEntry = ({ 
   entry, 
   onDelete, 
-  progressInfo 
+  progressInfo,
+  subjects 
 }: { 
   entry: SemesterEntry; 
   onDelete: (id: string) => void;
   progressInfo?: { current: number; total: number; };
+  subjects: Subject[];
 }) => {
   const [{ isDragging }, drag] = useDrag({
     type: 'schedule-entry',
@@ -74,12 +76,38 @@ const DraggableEntry = ({
     }
   });
 
-  const isComboClass = entry.subjectName.includes('[コンビ]');
+  // 科目管理から対応する科目を探してタイプを判定
+  const cleanSubjectName = entry.subjectName
+    .replace(' [コンビ]', '')
+    .replace(' [共通]', '')
+    .replace(' [合同]', '');
+  
+  const matchingSubject = subjects.find(s => 
+    s.name === cleanSubjectName || s.name === entry.subjectName
+  );
+  
+  // 授業タイプの判定（優先順位: コンビ > 合同 > 共通 > 専門）
+  const isComboClass = entry.subjectName.includes('[コンビ]') || matchingSubject?.lessonType === 'コンビ授業';
+  const isJointClass = !isComboClass && matchingSubject?.department === '共通' && (matchingSubject?.grade === '全学年' || matchingSubject?.grade === '全学年（合同）');
+  const isCommonSubject = !isComboClass && !isJointClass && matchingSubject?.department === '共通';
+  const isSpecializedSubject = !isComboClass && !isJointClass && !isCommonSubject && matchingSubject?.department !== '共通';
+  
+  // CSSクラス名を決定
+  let entryTypeClass = '';
+  if (isComboClass) {
+    entryTypeClass = 'combo-class';
+  } else if (isJointClass) {
+    entryTypeClass = 'joint-class';
+  } else if (isCommonSubject) {
+    entryTypeClass = 'common-class';
+  } else if (isSpecializedSubject) {
+    entryTypeClass = 'specialized-class';
+  }
   
   return (
     <div
       ref={drag}
-      className={`semester-entry ${isDragging ? 'dragging' : ''} ${isComboClass ? 'combo-class' : ''}`}
+      className={`semester-entry ${isDragging ? 'dragging' : ''} ${entryTypeClass}`}
       style={{ 
         opacity: isDragging ? 0.5 : 1,
         cursor: isDragging ? 'grabbing' : 'grab'
@@ -88,6 +116,9 @@ const DraggableEntry = ({
       <div className="entry-header">
         <div className="entry-subject">
           {isComboClass && <span className="combo-indicator">🤝</span>}
+          {isJointClass && <span className="joint-indicator">🎓</span>}
+          {isCommonSubject && <span className="common-indicator">📚</span>}
+          {isSpecializedSubject && <span className="specialized-indicator">⚙️</span>}
           <span className="subject-name">{entry.subjectName}</span>
           {progressInfo && (
             <span className="entry-progress">({progressInfo.current}/{progressInfo.total})</span>
@@ -122,7 +153,8 @@ const DroppableCell = ({
   entriesWithProgress,
   onDrop, 
   onAdd,
-  isHoliday = false
+  isHoliday = false,
+  subjects
 }: { 
   week: number;
   day: string;
@@ -132,6 +164,7 @@ const DroppableCell = ({
   onDrop: (entry: SemesterEntry, week: number, day: string, period: string) => void;
   onAdd: (week: number, day: string, period: string) => void;
   isHoliday?: boolean;
+  subjects: Subject[];
 }) => {
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: 'schedule-entry',
@@ -179,6 +212,7 @@ const DroppableCell = ({
           entry={entry}
           progressInfo={progressInfo}
           onDelete={() => {}} 
+          subjects={subjects}
         />
       ))}
       {entries.length === 0 && !isHoliday && (
@@ -683,8 +717,20 @@ const SemesterTimetable = ({
 
                           // 各エントリーの進捗情報を計算
                           const entriesWithProgress = entries.map(entry => {
+                            // 同じ科目（タグを除去した名前で比較）の全エントリを取得
+                            const baseSubjectName = entry.subjectName
+                              .replace(' [コンビ]', '')
+                              .replace(' [共通]', '')
+                              .replace(' [合同]', '');
+                            
                             const sameSubjectEntries = currentGroup.schedule
-                              .filter(e => e.subjectName === entry.subjectName && e.teacherName === entry.teacherName)
+                              .filter(e => {
+                                const entryBaseName = e.subjectName
+                                  .replace(' [コンビ]', '')
+                                  .replace(' [共通]', '')
+                                  .replace(' [合同]', '');
+                                return entryBaseName === baseSubjectName && e.teacherName === entry.teacherName;
+                              })
                               .sort((a, b) => {
                                 if (a.timeSlot.week !== b.timeSlot.week) {
                                   return a.timeSlot.week - b.timeSlot.week;
@@ -693,18 +739,51 @@ const SemesterTimetable = ({
                                 return dayOrder[a.timeSlot.dayOfWeek] - dayOrder[b.timeSlot.dayOfWeek];
                               });
 
-                            // 科目管理から正しい総コマ数を取得
+                            // 科目管理から正しい総コマ数を取得（柔軟な名前照合）
                             const matchingSubject = _subjects.find(s => {
-                              // 科目名の完全一致または、コンビ授業の場合の部分一致
-                              const cleanSubjectName = entry.subjectName.replace(' [コンビ]', '');
-                              return s.name === cleanSubjectName || s.name === entry.subjectName;
+                              // 完全一致
+                              if (s.name === baseSubjectName || s.name === entry.subjectName) {
+                                return true;
+                              }
+                              
+                              // ローマ数字の正規化（I ↔ Ⅰ, II ↔ Ⅱ）
+                              const normalizeRoman = (name: string) => {
+                                return name
+                                  .replace(/\sI$/, ' Ⅰ')
+                                  .replace(/\sII$/, ' Ⅱ')
+                                  .replace(/\sIII$/, ' Ⅲ')
+                                  .replace(/\sⅠ$/, ' I')
+                                  .replace(/\sⅡ$/, ' II')
+                                  .replace(/\sⅢ$/, ' III');
+                              };
+                              
+                              const normalizedSubject = normalizeRoman(s.name);
+                              const normalizedBase = normalizeRoman(baseSubjectName);
+                              const normalizedEntry = normalizeRoman(entry.subjectName);
+                              
+                              return normalizedSubject === normalizedBase || normalizedSubject === normalizedEntry;
                             });
+                            
+                            if (!matchingSubject) {
+                              console.warn(`⚠️ 科目管理で見つからない: "${entry.subjectName}" → "${baseSubjectName}"`);
+                              console.warn(`   利用可能な科目名:`, _subjects.map(s => s.name));
+                            } else {
+                              console.log(`✅ 科目照合成功: "${entry.subjectName}" → "${matchingSubject.name}"`);
+                            }
                             
                             const totalClasses = matchingSubject ? matchingSubject.totalClasses : sameSubjectEntries.length;
                             const currentIndex = sameSubjectEntries.findIndex(e => e.id === entry.id);
+                            const currentNumber = currentIndex + 1;
+                            
+                            // 進捗表示の修正：実際の配置数と目標数を比較
+                            const actualPlaced = sameSubjectEntries.length;
+                            const targetTotal = totalClasses;
+                            
+                            console.log(`📊 進捗計算: "${baseSubjectName}" - 配置済み: ${actualPlaced}, 目標: ${targetTotal}, マッチした科目: ${matchingSubject?.name || 'なし'}`);
+                            
                             const progressInfo = {
-                              current: currentIndex + 1,
-                              total: totalClasses
+                              current: Math.min(currentNumber, targetTotal), // 目標を超えないよう制限
+                              total: Math.max(targetTotal, actualPlaced) // 実際の配置が目標を超える場合は実際の数を使用
                             };
 
                             return { entry, progressInfo };
@@ -724,6 +803,7 @@ const SemesterTimetable = ({
                               onDrop={handleDrop}
                               onAdd={handleAddEntry}
                               isHoliday={isHolidayCell}
+                              subjects={_subjects}
                             />
                           );
                         })}
