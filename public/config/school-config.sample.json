@@ -1,0 +1,157 @@
+{
+  "semester": {
+    "startDate": "2025-09-29",
+    "endDate": "2026-02-06",
+    "weeks": 19
+  },
+  "holidays": [
+    "2025-10-13",
+    "2025-10-14",
+    "2025-11-03",
+    "2025-11-04",
+    "2025-11-23",
+    "2025-11-24",
+    "2025-12-22",
+    "2025-12-29",
+    "2025-12-30",
+    "2025-12-31",
+    "2026-01-01",
+    "2026-01-02",
+    "2026-01-03",
+    "2026-01-12",
+    "2026-01-13"
+  ],
+  "blockedWeeks": [
+    {
+      "id": "event-yamame-2025",
+      "label": "やまめ",
+      "startDate": "2025-12-22",
+      "endDate": "2025-12-22",
+      "affects": ["all"],
+      "reason": "学校行事"
+    },
+    {
+      "id": "event-showcase-2026",
+      "label": "成果発表会",
+      "startDate": "2026-01-26",
+      "endDate": "2026-01-28",
+      "affects": ["all"],
+      "reason": "準備・当日・振り返り"
+    },
+    {
+      "id": "makeup-period-2026",
+      "label": "補講期間",
+      "startDate": "2026-01-29",
+      "endDate": "2026-02-06",
+      "affects": ["all"],
+      "reason": "通常授業なし"
+    }
+  ],
+  "specialConstraints": {
+    "fiona": {
+      "name": "フィオーナ",
+      "regularDays": ["木"],
+      "regularPeriods": ["3限", "4限"],
+      "period3StartTime": "13:15",
+      "shortagePerClass": 15,
+      "makeupPolicy": "mon-3x2-plus-mon-4x1",
+      "blockMon4WhenMon3": true,
+      "excludeDates": ["2025-12-22"]
+    },
+    "yaita": {
+      "name": "矢板",
+      "preferConsecutive": true,
+      "consecutiveDays": ["月"],
+      "consecutivePeriods": ["3限", "4限"],
+      "minConsecutive": 2
+    },
+    "kinoshita": {
+      "name": "木下",
+      "availableDays": ["月", "金"],
+      "preferConsecutive": false
+    }
+  },
+  "classTypes": {
+    "joint": {
+      "label": "合同",
+      "icon": "🎓",
+      "description": "全学年合同授業",
+      "requireSameTime": true,
+      "allowDifferentRoom": true
+    },
+    "combo": {
+      "label": "コンビ",
+      "icon": "🤝",
+      "description": "複数教師による授業",
+      "requireSameTime": true,
+      "requireSameRoom": true
+    },
+    "common": {
+      "label": "共通",
+      "icon": "📚",
+      "description": "同学年共通授業",
+      "requireSameTime": true,
+      "allowDifferentRoom": true
+    },
+    "specialized": {
+      "label": "専門",
+      "icon": "⚙️",
+      "description": "各グループ専門授業",
+      "requireSameTime": false,
+      "allowDifferentRoom": true
+    }
+  },
+  "groups": [
+    {
+      "id": "IT1",
+      "name": "ITソリューション1年",
+      "color": "#4CAF50"
+    },
+    {
+      "id": "IT2",
+      "name": "ITソリューション2年",
+      "color": "#2196F3"
+    },
+    {
+      "id": "TD1",
+      "name": "Techデザイン1年",
+      "color": "#FF9800"
+    },
+    {
+      "id": "TD2",
+      "name": "Techデザイン2年",
+      "color": "#9C27B0"
+    }
+  ],
+  "periods": {
+    "1限": {
+      "start": "09:00",
+      "end": "10:30",
+      "duration": 90
+    },
+    "2限": {
+      "start": "10:40",
+      "end": "12:10",
+      "duration": 90
+    },
+    "3限": {
+      "start": "13:00",
+      "end": "14:30",
+      "duration": 90
+    },
+    "4限": {
+      "start": "14:40",
+      "end": "16:10",
+      "duration": 90
+    }
+  },
+  "featureFlags": {
+    "enableFionaMakeup": false,
+    "enableBlockedWeeks": false,
+    "enableSubjectNormalization": false,
+    "enableImprovedErrorUI": false,
+    "enableExternalConfig": false
+  },
+  "version": "1.0.0",
+  "lastUpdated": "2025-08-21"
+}
