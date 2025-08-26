@@ -37,6 +37,22 @@ export interface TeacherConstraints {
   weeklyGrouping?: boolean;        // 週単位でのまとめ授業
   flexibleScheduling?: boolean;    // 柔軟なスケジューリング許可
   changeUnavailable?: boolean;     // 変更対応困難
+  // 確定/NG/希望の3区分
+  confirmed?: string[];             // 確定事項
+  ng?: {                           // 絶対不可条件
+    days?: string[];
+    periods?: number[];
+    dates?: string[];
+    notes?: string;
+  };
+  wish?: {                         // 希望条件
+    preferDays?: string[];
+    preferConsecutive?: boolean;
+    preferPackedDay?: boolean;
+    biweekly?: 'odd' | 'even' | null;
+    periods?: number[];
+    notes?: string;
+  };
 }
 
 export interface Subject {

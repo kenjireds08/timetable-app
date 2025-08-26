@@ -2608,3 +2608,100 @@ body {
 .semester-cell {
   transition: background-color 0.2s ease, border 0.2s ease;
 }
+
+/* 教師管理 - 確定/NG/希望の3区分表示 */
+.constraints-three-categories {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.constraint-category {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.category-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.constraint-tag {
+  padding: 0.125rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.confirmed-tag {
+  background: #dcfce7;
+  color: #065f46;
+  border: 1px solid #86efac;
+}
+
+.ng-tag {
+  background: #fee2e2;
+  color: #7f1d1d;
+  border: 1px solid #fca5a5;
+}
+
+.wish-tag {
+  background: #dbeafe;
+  color: #1e3a8a;
+  border: 1px solid #93c5fd;
+}
+
+/* 詳細説明エリア */
+.constraint-details {
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.details-header {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.details-content {
+  font-size: 0.8rem;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.detail-item {
+  margin-bottom: 0.25rem;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-item strong {
+  color: #374151;
+  margin-right: 0.25rem;
+}
+
+/* 未入力表示 */
+.category-empty {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 0.8rem;
+}

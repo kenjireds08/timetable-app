@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Teacher, TeacherType, DayOfWeek, Subject } from '../types';
 import { DAYS_OF_WEEK } from '../types';
-import { Plus, Edit2, Trash2, Save, X, Settings, Clock, Users, Calendar } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Settings, Clock, Users, Calendar, CheckCircle, XCircle, Heart } from 'lucide-react';
 
 interface AdvancedTeacherManagerProps {
   teachers: Teacher[];
@@ -14,25 +14,67 @@ interface AdvancedTeacherManagerProps {
 const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete }: AdvancedTeacherManagerProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [expandedConstraints, setExpandedConstraints] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState<Partial<Teacher>>({
     name: '',
     type: '常勤' as TeacherType,
-    constraints: {}
-  });
-
-  const toggleConstraints = (teacherId: string) => {
-    const newExpanded = new Set(expandedConstraints);
-    if (newExpanded.has(teacherId)) {
-      newExpanded.delete(teacherId);
-    } else {
-      newExpanded.add(teacherId);
+    constraints: {
+      confirmed: [],
+      ng: { days: [], periods: [], dates: [], notes: '' },
+      wish: { preferDays: [], preferConsecutive: false, preferPackedDay: false, biweekly: null, periods: [], notes: '' }
     }
-    setExpandedConstraints(newExpanded);
+  });
+  const [constraintsData, setConstraintsData] = useState<any>(null);
+
+  // 制約データをロード
+  useEffect(() => {
+    fetch('/config/teachers_constraints_2025H2.json')
+      .then(res => res.json())
+      .then(data => {
+        setConstraintsData(data);
+      })
+      .catch(err => console.error('制約データの読み込みに失敗:', err));
+  }, []);
+
+  // 教師の制約データを取得
+  const getTeacherConstraints = (teacherName: string) => {
+    if (!constraintsData) {
+      return null;
+    }
+    const found = constraintsData.teachers.find((t: any) => t.name === teacherName);
+    return found;
   };
 
   const handleSubmit = () => {
     if (formData.name) {
+      // JSONデータも更新
+      if (constraintsData) {
+        const teacherIndex = constraintsData.teachers.findIndex((t: any) => t.name === formData.name);
+        if (teacherIndex >= 0) {
+          // 既存教師の更新
+          constraintsData.teachers[teacherIndex] = {
+            ...constraintsData.teachers[teacherIndex],
+            confirmed: formData.constraints?.confirmed || [],
+            ng: formData.constraints?.ng || {},
+            wish: formData.constraints?.wish || {},
+            notes: formData.constraints?.specialNotes || ''
+          };
+        } else {
+          // 新規教師の追加
+          constraintsData.teachers.push({
+            id: formData.name.toLowerCase().replace(/\s/g, '_'),
+            name: formData.name,
+            department: '未設定',
+            confirmed: formData.constraints?.confirmed || [],
+            ng: formData.constraints?.ng || {},
+            wish: formData.constraints?.wish || {},
+            subjects: [],
+            notes: formData.constraints?.specialNotes || ''
+          });
+        }
+        // LocalStorageに保存
+        localStorage.setItem('teachers_constraints_2025H2', JSON.stringify(constraintsData));
+      }
+
       if (editingId) {
         onUpdate({ ...formData, id: editingId } as Teacher);
         setEditingId(null);
@@ -43,19 +85,44 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
         } as Teacher);
         setIsAdding(false);
       }
-      setFormData({ name: '', type: '常勤', constraints: {} });
+      setFormData({ 
+        name: '', 
+        type: '常勤', 
+        constraints: {
+          confirmed: [],
+          ng: { days: [], periods: [], dates: [], notes: '' },
+          wish: { preferDays: [], preferConsecutive: false, preferPackedDay: false, biweekly: null, periods: [], notes: '' }
+        }
+      });
     }
   };
 
   const handleEdit = (teacher: Teacher) => {
+    const constraintData = getTeacherConstraints(teacher.name);
     setEditingId(teacher.id);
-    setFormData(teacher);
+    setFormData({
+      ...teacher,
+      constraints: {
+        ...teacher.constraints,
+        confirmed: constraintData?.confirmed || [],
+        ng: constraintData?.ng || { days: [], periods: [], dates: [], notes: '' },
+        wish: constraintData?.wish || { preferDays: [], preferConsecutive: false, preferPackedDay: false, biweekly: null, periods: [], notes: '' }
+      }
+    });
   };
 
   const handleCancel = () => {
     setIsAdding(false);
     setEditingId(null);
-    setFormData({ name: '', type: '常勤', constraints: {} });
+    setFormData({ 
+      name: '', 
+      type: '常勤', 
+      constraints: {
+        confirmed: [],
+        ng: { days: [], periods: [], dates: [], notes: '' },
+        wish: { preferDays: [], preferConsecutive: false, preferPackedDay: false, biweekly: null, periods: [], notes: '' }
+      }
+    });
   };
 
   const updateConstraints = (key: string, value: any) => {
@@ -76,162 +143,201 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
     <div className="constraint-form">
       <h4>🎯 制約条件設定</h4>
       
-      {/* 基本制約 */}
+      {/* 確定事項 */}
       <div className="constraint-section">
-        <h5><Calendar size={16} /> 基本制約</h5>
-        
+        <h5 style={{ color: '#10b981' }}>✅ 確定事項</h5>
         <div className="form-group">
-          <label>利用可能曜日</label>
-          <div className="checkbox-group">
-            {DAYS_OF_WEEK.map(day => (
-              <label key={day} className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.constraints?.availableDays?.includes(day) || false}
-                  onChange={(e) => {
-                    const availableDays = formData.constraints?.availableDays || [];
-                    if (e.target.checked) {
-                      updateConstraints('availableDays', [...availableDays, day]);
-                    } else {
-                      updateConstraints('availableDays', availableDays.filter(d => d !== day));
-                    }
-                  }}
-                />
-                {day}曜日
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label>利用不可曜日</label>
-          <div className="checkbox-group">
-            {DAYS_OF_WEEK.map(day => (
-              <label key={day} className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.constraints?.unavailableDays?.includes(day) || false}
-                  onChange={(e) => {
-                    const unavailableDays = formData.constraints?.unavailableDays || [];
-                    if (e.target.checked) {
-                      updateConstraints('unavailableDays', [...unavailableDays, day]);
-                    } else {
-                      updateConstraints('unavailableDays', unavailableDays.filter(d => d !== day));
-                    }
-                  }}
-                />
-                {day}曜日
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* 時間制約 */}
-      <div className="constraint-section">
-        <h5><Clock size={16} /> 時間制約</h5>
-        
-        <div className="form-row">
-          <div className="form-group">
-            <label>1日最大コマ数</label>
-            <input
-              type="number"
-              value={formData.constraints?.maxClassesPerDay || ''}
-              onChange={(e) => updateConstraints('maxClassesPerDay', parseInt(e.target.value))}
-              min="1"
-              max="4"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>週最大コマ数</label>
-            <input
-              type="number"
-              value={formData.constraints?.maxClassesPerWeek || ''}
-              onChange={(e) => updateConstraints('maxClassesPerWeek', parseInt(e.target.value))}
-              min="1"
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label>特殊開始時刻</label>
-          <input
-            type="time"
-            value={formData.constraints?.specialTimeStart || ''}
-            onChange={(e) => updateConstraints('specialTimeStart', e.target.value)}
-            placeholder="例: 13:15"
+          <label>確定している条件を改行区切りで入力</label>
+          <textarea
+            value={(formData.constraints?.confirmed || []).join('\n')}
+            onChange={(e) => {
+              const confirmed = e.target.value.split('\n').filter(line => line.trim());
+              updateConstraints('confirmed', confirmed);
+            }}
+            placeholder="例: 木曜1限・2限&#10;金曜3-4限（隔週：奇数週）&#10;不足分は月曜で補填"
+            rows={4}
           />
         </div>
       </div>
 
-      {/* 順序制約 */}
+      {/* NG条件 */}
       <div className="constraint-section">
-        <h5><Users size={16} /> 順序制約（連続授業）</h5>
+        <h5 style={{ color: '#ef4444' }}>❌ NG条件</h5>
         
         <div className="form-group">
-          <label>連続実施科目</label>
+          <label>NG曜日</label>
+          <div className="checkbox-group">
+            {['月', '火', '水', '木', '金'].map(day => (
+              <label key={day} className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={formData.constraints?.ng?.days?.includes(day) || false}
+                  onChange={(e) => {
+                    const ngDays = formData.constraints?.ng?.days || [];
+                    const newNg = { ...formData.constraints?.ng };
+                    if (e.target.checked) {
+                      newNg.days = [...ngDays, day];
+                    } else {
+                      newNg.days = ngDays.filter(d => d !== day);
+                    }
+                    updateConstraints('ng', newNg);
+                  }}
+                />
+                {day}曜日
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>NG時限</label>
+          <div className="checkbox-group">
+            {[1, 2, 3, 4].map(period => (
+              <label key={period} className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={formData.constraints?.ng?.periods?.includes(period) || false}
+                  onChange={(e) => {
+                    const ngPeriods = formData.constraints?.ng?.periods || [];
+                    const newNg = { ...formData.constraints?.ng };
+                    if (e.target.checked) {
+                      newNg.periods = [...ngPeriods, period];
+                    } else {
+                      newNg.periods = ngPeriods.filter(p => p !== period);
+                    }
+                    updateConstraints('ng', newNg);
+                  }}
+                />
+                {period}限
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>NG日付（YYYY-MM-DD形式、改行区切り）</label>
           <textarea
-            value={formData.constraints?.sequentialSubjects?.description || ''}
-            onChange={(e) => updateConstraints('sequentialSubjects', {
-              ...formData.constraints?.sequentialSubjects,
-              description: e.target.value
-            })}
-            placeholder="例: ドローン座学→ドローンプログラミング→オンライン講座→撮影・まとめの順序で連続4日間実施"
+            value={(formData.constraints?.ng?.dates || []).join('\n')}
+            onChange={(e) => {
+              const dates = e.target.value.split('\n').filter(line => line.trim());
+              const newNg = { ...formData.constraints?.ng, dates };
+              updateConstraints('ng', newNg);
+            }}
+            placeholder="2025-09-18&#10;2025-10-17&#10;2025-12-01"
             rows={3}
           />
         </div>
 
         <div className="form-group">
-          <div className="checkbox-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={formData.constraints?.sequentialSubjects?.mustBeConsecutiveDays || false}
-                onChange={(e) => updateConstraints('sequentialSubjects', {
-                  ...formData.constraints?.sequentialSubjects,
-                  mustBeConsecutiveDays: e.target.checked
-                })}
-              />
-              連続した日程で実施する必要がある
-            </label>
-          </div>
+          <label>NG備考</label>
+          <input
+            type="text"
+            value={formData.constraints?.ng?.notes || ''}
+            onChange={(e) => {
+              const newNg = { ...formData.constraints?.ng, notes: e.target.value };
+              updateConstraints('ng', newNg);
+            }}
+            placeholder="例: 水曜日は商工会個別相談"
+          />
         </div>
       </div>
 
-      {/* その他制約 */}
+      {/* 希望条件 */}
       <div className="constraint-section">
-        <h5><Settings size={16} /> その他の制約</h5>
+        <h5 style={{ color: '#3b82f6' }}>💙 希望条件</h5>
         
         <div className="form-group">
+          <label>希望曜日</label>
+          <div className="checkbox-group">
+            {['月', '火', '水', '木', '金'].map(day => (
+              <label key={day} className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={formData.constraints?.wish?.preferDays?.includes(day) || false}
+                  onChange={(e) => {
+                    const wishDays = formData.constraints?.wish?.preferDays || [];
+                    const newWish = { ...formData.constraints?.wish };
+                    if (e.target.checked) {
+                      newWish.preferDays = [...wishDays, day];
+                    } else {
+                      newWish.preferDays = wishDays.filter(d => d !== day);
+                    }
+                    updateConstraints('wish', newWish);
+                  }}
+                />
+                {day}曜日
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>希望オプション</label>
           <div className="checkbox-group">
             <label className="checkbox-label">
               <input
                 type="checkbox"
-                checked={formData.constraints?.preferConsecutiveClasses || false}
-                onChange={(e) => updateConstraints('preferConsecutiveClasses', e.target.checked)}
+                checked={formData.constraints?.wish?.preferConsecutive || false}
+                onChange={(e) => {
+                  const newWish = { ...formData.constraints?.wish, preferConsecutive: e.target.checked };
+                  updateConstraints('wish', newWish);
+                }}
               />
-              連続コマを優先する
+              連続コマ希望
             </label>
-            
             <label className="checkbox-label">
               <input
                 type="checkbox"
-                checked={formData.constraints?.prioritizeGapMinimization || false}
-                onChange={(e) => updateConstraints('prioritizeGapMinimization', e.target.checked)}
+                checked={formData.constraints?.wish?.preferPackedDay || false}
+                onChange={(e) => {
+                  const newWish = { ...formData.constraints?.wish, preferPackedDay: e.target.checked };
+                  updateConstraints('wish', newWish);
+                }}
               />
-              空きコマ最小化を優先する
+              1日集約希望
             </label>
           </div>
         </div>
 
         <div className="form-group">
-          <label>特記事項</label>
+          <label>隔週設定</label>
+          <select
+            value={formData.constraints?.wish?.biweekly || ''}
+            onChange={(e) => {
+              const newWish = { ...formData.constraints?.wish, biweekly: e.target.value || null };
+              updateConstraints('wish', newWish);
+            }}
+          >
+            <option value="">なし</option>
+            <option value="odd">奇数週</option>
+            <option value="even">偶数週</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label>希望備考</label>
+          <input
+            type="text"
+            value={formData.constraints?.wish?.notes || ''}
+            onChange={(e) => {
+              const newWish = { ...formData.constraints?.wish, notes: e.target.value };
+              updateConstraints('wish', newWish);
+            }}
+            placeholder="例: 木曜最優先、金曜次優先"
+          />
+        </div>
+      </div>
+
+      {/* 詳細 */}
+      <div className="constraint-section">
+        <h5 style={{ color: '#6b7280' }}>💡 詳細</h5>
+        <div className="form-group">
+          <label>担当科目・補足説明</label>
           <textarea
             value={formData.constraints?.specialNotes || ''}
             onChange={(e) => updateConstraints('specialNotes', e.target.value)}
-            placeholder="その他の特殊な制約や要望があれば記述"
-            rows={3}
+            placeholder="例: ビジネス実務担当&#10;前期と同じスケジュール希望&#10;変更対応困難"
+            rows={4}
           />
         </div>
       </div>
@@ -302,68 +408,121 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
                 <h3>{teacher.name}</h3>
                 <div className="teacher-badges">
                   <span className="badge">{teacher.type}</span>
-                  {teacher.constraints?.specialTimeStart && (
-                    <span className="badge special">特殊時刻</span>
-                  )}
-                  {teacher.constraints?.sequentialSubjects && (
-                    <span className="badge sequence">連続授業</span>
-                  )}
                 </div>
               </div>
 
-              {teacher.constraints?.specialNotes && (
-                <div className="special-notes">
-                  💡 {teacher.constraints.specialNotes}
-                </div>
-              )}
+              {/* 確定/NG/希望/詳細の4区分表示 */}
+              {(() => {
+                const constraintData = getTeacherConstraints(teacher.name);
+                if (!constraintData) {
+                  return null;
+                }
 
-              {/* 制約の概要表示 */}
-              <div className="constraints-summary">
-                {teacher.constraints?.unavailableDays && (
-                  <div className="constraint-item">
-                    <strong>NG:</strong> {teacher.constraints.unavailableDays.join(', ')}
-                  </div>
-                )}
-                {teacher.constraints?.availableDays && (
-                  <div className="constraint-item">
-                    <strong>利用可能:</strong> {teacher.constraints.availableDays.join(', ')}
-                  </div>
-                )}
-                {teacher.constraints?.maxClassesPerWeek && (
-                  <div className="constraint-item">
-                    <strong>週最大:</strong> {teacher.constraints.maxClassesPerWeek}コマ
-                  </div>
-                )}
-              </div>
+                return (
+                  <div className="constraints-three-categories">
+                    {/* 確定事項 - 常時表示 */}
+                    <div className="constraint-category confirmed">
+                      <div className="category-header">
+                        <CheckCircle size={14} style={{ color: '#10b981' }} />
+                        <span style={{ color: '#10b981', fontWeight: 'bold' }}>確定</span>
+                      </div>
+                      <div className="category-items">
+                        {constraintData.confirmed && constraintData.confirmed.length > 0 ? (
+                          constraintData.confirmed.map((item: string, idx: number) => (
+                            <span key={idx} className="constraint-tag confirmed-tag">{item}</span>
+                          ))
+                        ) : (
+                          <span className="category-empty">— 未入力</span>
+                        )}
+                      </div>
+                    </div>
 
-              {/* 詳細表示ボタン */}
-              <button 
-                className="toggle-details"
-                onClick={() => toggleConstraints(teacher.id)}
-              >
-                {expandedConstraints.has(teacher.id) ? '詳細を隠す' : '詳細を表示'}
-              </button>
+                    {/* NG条件 - 常時表示 */}
+                    <div className="constraint-category ng">
+                      <div className="category-header">
+                        <XCircle size={14} style={{ color: '#ef4444' }} />
+                        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>NG</span>
+                      </div>
+                      <div className="category-items">
+                        {constraintData.ng && (constraintData.ng.days?.length > 0 || constraintData.ng.periods?.length > 0 || constraintData.ng.dates?.length > 0 || constraintData.ng.notes) ? (
+                          <>
+                            {constraintData.ng.days && constraintData.ng.days.map((day: string, idx: number) => (
+                              <span key={`day-${idx}`} className="constraint-tag ng-tag">{day}曜NG</span>
+                            ))}
+                            {constraintData.ng.periods && constraintData.ng.periods.map((period: number, idx: number) => (
+                              <span key={`period-${idx}`} className="constraint-tag ng-tag">{period}限NG</span>
+                            ))}
+                            {constraintData.ng.dates && constraintData.ng.dates.length > 0 && (
+                              <span className="constraint-tag ng-tag">特定日NG×{constraintData.ng.dates.length}</span>
+                            )}
+                            {constraintData.ng.notes && (
+                              <span className="constraint-tag ng-tag">{constraintData.ng.notes}</span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="category-empty">— 未入力</span>
+                        )}
+                      </div>
+                    </div>
 
-              {/* 詳細制約情報 */}
-              {expandedConstraints.has(teacher.id) && (
-                <div className="constraints-detail">
-                  {teacher.constraints?.sequentialSubjects && (
-                    <div className="constraint-detail">
-                      <strong>連続授業:</strong> {teacher.constraints.sequentialSubjects.description}
+                    {/* 希望条件 - 常時表示 */}
+                    <div className="constraint-category wish">
+                      <div className="category-header">
+                        <Heart size={14} style={{ color: '#3b82f6' }} />
+                        <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>希望</span>
+                      </div>
+                      <div className="category-items">
+                        {constraintData.wish && (constraintData.wish.preferDays?.length > 0 || constraintData.wish.preferConsecutive || constraintData.wish.preferPackedDay || constraintData.wish.biweekly || constraintData.wish.notes) ? (
+                          <>
+                            {constraintData.wish.preferDays && constraintData.wish.preferDays.map((day: string, idx: number) => (
+                              <span key={`pday-${idx}`} className="constraint-tag wish-tag">{day}希望</span>
+                            ))}
+                            {constraintData.wish.preferConsecutive && (
+                              <span className="constraint-tag wish-tag">連続コマ希望</span>
+                            )}
+                            {constraintData.wish.preferPackedDay && (
+                              <span className="constraint-tag wish-tag">1日集約希望</span>
+                            )}
+                            {constraintData.wish.biweekly && (
+                              <span className="constraint-tag wish-tag">
+                                {constraintData.wish.biweekly === 'odd' ? '奇数週' : '偶数週'}
+                              </span>
+                            )}
+                            {constraintData.wish.notes && (
+                              <span className="constraint-tag wish-tag">{constraintData.wish.notes}</span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="category-empty">— 未入力</span>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  {teacher.constraints?.monthlyExceptions?.map((exception, idx) => (
-                    <div key={idx} className="constraint-detail">
-                      <strong>月次例外:</strong> {exception.description}
+
+                    {/* 詳細説明 - 常時表示 */}
+                    <div className="constraint-details">
+                      <div className="details-header">
+                        💡 <span style={{ color: '#6b7280', fontWeight: 'bold' }}>詳細</span>
+                      </div>
+                      <div className="details-content">
+                        {(constraintData.notes || constraintData.subjects?.length > 0) ? (
+                          <>
+                            {constraintData.subjects && constraintData.subjects.length > 0 && (
+                              <div className="detail-item">
+                                <strong>担当科目：</strong>{constraintData.subjects.join('、')}
+                              </div>
+                            )}
+                            {constraintData.notes && (
+                              <div className="detail-item">{constraintData.notes}</div>
+                            )}
+                          </>
+                        ) : (
+                          <span className="category-empty">— 未入力</span>
+                        )}
+                      </div>
                     </div>
-                  ))}
-                  {teacher.constraints?.specialTimeStart && (
-                    <div className="constraint-detail">
-                      <strong>特殊開始時刻:</strong> {teacher.constraints.specialTimeStart}
-                    </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="teacher-actions">

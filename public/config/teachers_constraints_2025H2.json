@@ -1,0 +1,375 @@
+{
+  "version": "2025-H2",
+  "schema": "teacher-constraints/v1",
+  "lastUpdated": "2025-08-26",
+  "teachers": [
+    {
+      "id": "ide",
+      "name": "井手 修身",
+      "department": "共通",
+      "confirmed": [
+        "11/28(金) 次世代 1コマ 全学年"
+      ],
+      "ng": {},
+      "wish": {},
+      "subjects": [
+        "次世代"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "natsui",
+      "name": "夏井 美果",
+      "department": "共通",
+      "confirmed": [
+        "木曜1限・2限（Essential English I/II）"
+      ],
+      "ng": {},
+      "wish": {},
+      "subjects": [
+        "Essential English I",
+        "Essential English II"
+      ],
+      "notes": ""
+    },
+    {
+      "id": "matsunaga",
+      "name": "松永 祐一",
+      "department": "共通",
+      "confirmed": [
+        "木曜1限（ビジネス日本語 I）"
+      ],
+      "ng": {},
+      "wish": {},
+      "subjects": [
+        "ビジネス日本語 I"
+      ],
+      "notes": "前期同様"
+    },
+    {
+      "id": "soejima",
+      "name": "副島 小春",
+      "department": "共通",
+      "confirmed": [
+        "木曜2限（ビジネス日本語 II）"
+      ],
+      "ng": {},
+      "wish": {},
+      "subjects": [
+        "ビジネス日本語 II"
+      ],
+      "notes": "授業変更にほぼ絶対対応できない"
+    },
+    {
+      "id": "kinoshita",
+      "name": "木下 俊和",
+      "department": "共通",
+      "confirmed": [],
+      "ng": {},
+      "wish": {
+        "preferDays": [
+          "月",
+          "金"
+        ],
+        "preferConsecutive": true,
+        "preferPackedDay": true,
+        "notes": "週2日、2コマ続き希望。1限と3限のように時間が空いても可"
+      },
+      "subjects": [
+        "ビジネス開発演習",
+        "観光マーケティング",
+        "グローバルスタディーズI",
+        "グローバルスタディーズII"
+      ],
+      "notes": "月・水・金対応可、1日2コマ×2日希望"
+    },
+    {
+      "id": "miyazaki",
+      "name": "宮嵜 真由美",
+      "department": "共通",
+      "confirmed": [
+        "木曜・金曜対応可"
+      ],
+      "ng": {
+        "days": [
+          "水"
+        ],
+        "notes": "水曜終日NG"
+      },
+      "wish": {
+        "preferDays": [
+          "木",
+          "金"
+        ],
+        "notes": "木曜最優先、金曜次優先"
+      },
+      "subjects": [
+        "ビジネス実務"
+      ],
+      "notes": "ビジネス実務担当"
+    },
+    {
+      "id": "tagami",
+      "name": "田上 寛美",
+      "department": "共通",
+      "confirmed": [
+        "月曜・水曜は終日OK",
+        "火曜・木曜は3・4限のみOK"
+      ],
+      "ng": {
+        "days": [
+          "金"
+        ],
+        "notes": "金曜終日NG、水曜は月1回午前NG"
+      },
+      "wish": {},
+      "subjects": [],
+      "notes": "月によって予定あり/なしがある"
+    },
+    {
+      "id": "suzuki",
+      "name": "鈴木 俊良",
+      "department": "共通",
+      "confirmed": [],
+      "ng": {},
+      "wish": {
+        "preferConsecutive": true,
+        "notes": "14-15コマ目は連続"
+      },
+      "subjects": [
+        "クリエイティブコミュニケーションラボ",
+        "デザインとプレゼンテーション"
+      ],
+      "notes": "クリエイティブコミュニケーションラボ、デザインとプレゼンテーション担当。何曜日でも大丈夫"
+    },
+    {
+      "id": "koyama",
+      "name": "小山 善文",
+      "department": "専門（IT）",
+      "confirmed": [],
+      "ng": {},
+      "wish": {
+        "preferDays": [
+          "月",
+          "木"
+        ],
+        "notes": "前期は木曜2-4限、月曜午後も可能"
+      },
+      "subjects": [],
+      "notes": "月曜、木曜2、3、4限対応〇"
+    },
+    {
+      "id": "nishikawa",
+      "name": "西川 徹",
+      "department": "専門（IT）",
+      "confirmed": [],
+      "ng": {},
+      "wish": {
+        "preferDays": [
+          "水",
+          "木"
+        ],
+        "preferConsecutive": true,
+        "notes": "週1日、2コマ続き希望。午前中(1・2限)が助かるが午後(3・4限)でも可"
+      },
+      "subjects": [
+        "IoTとデータ活用I",
+        "IoTとデータ活用II"
+      ],
+      "notes": "水曜、木曜1、2時間目対応〇"
+    },
+    {
+      "id": "iwaki",
+      "name": "岩木 健",
+      "department": "専門（IT）",
+      "confirmed": [
+        "授業は水曜日に設定（週1日集約）"
+      ],
+      "ng": {},
+      "wish": {
+        "preferPackedDay": true,
+        "notes": "週1日にまとめてほしい"
+      },
+      "subjects": [],
+      "notes": "後期は火曜→水曜に授業を設定したい"
+    },
+    {
+      "id": "son",
+      "name": "孫 寧平",
+      "department": "専門（IT）",
+      "confirmed": [],
+      "ng": {},
+      "wish": {
+        "preferDays": [
+          "火",
+          "水",
+          "木"
+        ],
+        "notes": "1年生授業は木曜3・4限希望、進級制作・卒業研究は火水午後と組み合わせ"
+      },
+      "subjects": [
+        "データベース概論",
+        "データベース設計",
+        "WEBアプリ開発",
+        "オブジェクト指向プログラミング"
+      ],
+      "notes": "授業変更にほぼ絶対対応できない"
+    },
+    {
+      "id": "morita",
+      "name": "森田 典子",
+      "department": "専門（IT）",
+      "confirmed": [],
+      "ng": {
+        "days": [
+          "金"
+        ],
+        "periods": [
+          1
+        ],
+        "notes": "金曜不可、1時間目以外"
+      },
+      "wish": {
+        "preferDays": [
+          "火",
+          "水"
+        ],
+        "preferPackedDay": true,
+        "notes": "1日で担当コマ消化したい、2日以上の場合は連続する日"
+      },
+      "subjects": [],
+      "notes": "火曜、水曜対応〇"
+    },
+    {
+      "id": "murakami",
+      "name": "村上 大輔",
+      "department": "専門（IT）",
+      "confirmed": [],
+      "ng": {},
+      "wish": {},
+      "subjects": [],
+      "notes": "とくに要望無し"
+    },
+    {
+      "id": "yoshii",
+      "name": "吉井 幸宗",
+      "department": "専門（IT）",
+      "confirmed": [
+        "金曜3-4限（隔週：奇数週）でセキュリティ診断"
+      ],
+      "ng": {},
+      "wish": {
+        "biweekly": "odd",
+        "periods": [
+          3,
+          4
+        ],
+        "notes": "月曜1・2限も可能"
+      },
+      "subjects": [
+        "セキュリティ診断"
+      ],
+      "notes": "前期と同様に隔週の金曜"
+    },
+    {
+      "id": "fiona",
+      "name": "Fiona",
+      "department": "専門（TD）",
+      "confirmed": [
+        "木曜3限（13:15開始）・4限",
+        "不足分は月曜コマで補填"
+      ],
+      "ng": {},
+      "wish": {
+        "preferDays": [
+          "木"
+        ],
+        "periods": [
+          3,
+          4
+        ],
+        "notes": "木曜3限は13:15開始、15分遅れ×16週=240分不足→約3コマ分を月曜に補填"
+      },
+      "subjects": [],
+      "notes": "3限×2=150分、4限×1=90分、合計240分を月曜に"
+    },
+    {
+      "id": "lee",
+      "name": "Lee",
+      "department": "専門（TD）",
+      "confirmed": [
+        "木曜4限",
+        "金曜3限",
+        "金曜4限"
+      ],
+      "ng": {},
+      "wish": {},
+      "subjects": [],
+      "notes": "授業変更にほぼ絶対対応できない"
+    },
+    {
+      "id": "hirose",
+      "name": "廣瀬 実華",
+      "department": "専門（TD）",
+      "confirmed": [],
+      "ng": {
+        "days": [
+          "水"
+        ],
+        "periods": [
+          1
+        ],
+        "dates": [
+          "2025-09-18",
+          "2025-09-19",
+          "2025-10-17",
+          "2025-12-01",
+          "2025-12-02"
+        ],
+        "notes": "水曜日は商工会個別相談、1限NG、特定日不可"
+      },
+      "wish": {
+        "preferDays": [
+          "月",
+          "火",
+          "木",
+          "金"
+        ],
+        "preferPackedDay": true,
+        "notes": "1日で担当コマ消化、2日以上の場合は連続する日"
+      },
+      "subjects": [],
+      "notes": "12月くらいまでは水曜日が商工会個別相談で授業が難しい"
+    },
+    {
+      "id": "kubo",
+      "name": "久保 尭之",
+      "department": "専門（TD）",
+      "confirmed": [],
+      "ng": {},
+      "wish": {},
+      "subjects": [],
+      "notes": "要望無し"
+    },
+    {
+      "id": "yuzuki",
+      "name": "柚上",
+      "department": "その他",
+      "confirmed": [],
+      "ng": {},
+      "wish": {},
+      "subjects": [],
+      "notes": "前期のみ、後期は授業無し"
+    },
+    {
+      "id": "yaoita",
+      "name": "矢尾板",
+      "department": "その他",
+      "confirmed": [],
+      "ng": {},
+      "wish": {},
+      "subjects": [],
+      "notes": "前期のみ、後期は授業無し"
+    }
+  ]
+}

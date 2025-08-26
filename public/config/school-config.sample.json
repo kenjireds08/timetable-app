@@ -23,12 +23,20 @@
   ],
   "blockedWeeks": [
     {
+      "id": "event-choyosai-2025",
+      "label": "長陽際",
+      "startDate": "2025-11-01",
+      "endDate": "2025-11-01",
+      "affects": ["all"],
+      "reason": "学校行事（4コマ、1・2年両学科 塗りつぶし）"
+    },
+    {
       "id": "event-yamame-2025",
       "label": "やまめ",
       "startDate": "2025-12-22",
       "endDate": "2025-12-22",
       "affects": ["all"],
-      "reason": "学校行事"
+      "reason": "学校行事（4コマ、1・2年両学科 塗りつぶし）"
     },
     {
       "id": "event-showcase-2026",
@@ -36,7 +44,7 @@
       "startDate": "2026-01-26",
       "endDate": "2026-01-28",
       "affects": ["all"],
-      "reason": "準備・当日・振り返り"
+      "reason": "準備・当日・振り返り（4コマ、1・2年両学科 塗りつぶし）"
     },
     {
       "id": "makeup-period-2026",
@@ -44,9 +52,15 @@
       "startDate": "2026-01-29",
       "endDate": "2026-02-06",
       "affects": ["all"],
-      "reason": "通常授業なし"
+      "reason": "通常授業なし（4コマ、1・2年両学科 塗りつぶし）"
     }
   ],
+  // 2025/08/22 クライアント確認済み:
+  // - 2025-11-01: 長陽際（追加）
+  // - 2025-12-22: やまめ
+  // - 2026-01-26~01-28: 成果発表会
+  // - 2026-01-29~02-06: 補講期間
+  // - 突発的なイベントは各週月曜日（FW/補講日）にハンドで追加運用
   "specialConstraints": {
     "fiona": {
       "name": "フィオーナ",
@@ -54,9 +68,29 @@
       "regularPeriods": ["3限", "4限"],
       "period3StartTime": "13:15",
       "shortagePerClass": 15,
+      "totalShortage": 240,
       "makeupPolicy": "mon-3x2-plus-mon-4x1",
+      "makeupDetails": {
+        "monday3": {
+          "count": 2,
+          "minutes": 180
+        },
+        "monday4": {
+          "count": 1,
+          "minutes": 90
+        },
+        "totalMinutes": 240,
+        "note": "木曜3限の15分遅れ×16週分を月曜で補填"
+      },
       "blockMon4WhenMon3": true,
-      "excludeDates": ["2025-12-22"]
+      "excludeDates": ["2025-12-22"],
+      "unavailableForMakeup": [
+        "2025-12-22",
+        "2026-01-26",
+        "2026-01-27",
+        "2026-01-28"
+      ],
+      "implementation": "木曜3・4限で通常授業、1/26週以降は木曜使用不可のため月曜補填候補提示"
     },
     "yaita": {
       "name": "矢板",
