@@ -20,13 +20,15 @@ export const mockTeachers: Teacher[] = [
           { date: '2025-12-03', subject: 'デザインとプレゼンテーション' },
           { date: '2025-12-10', subject: 'デザインとプレゼンテーション' },
           { date: '2025-12-17', subject: 'デザインとプレゼンテーション' },
+          { date: '2025-12-24', subject: 'デザインとプレゼンテーション' },
+          { date: '2026-01-07', subject: 'デザインとプレゼンテーション' },
           { date: '2026-01-14', subject: 'デザインとプレゼンテーション' },
           { date: '2026-01-19', subject: '成果発表会プレゼン', periods: ['3限', '4限'] },
           { date: '2026-01-21', subject: 'ふりかえり' }
         ]
       },
       preferred: {
-        consecutivePeriods: ['3限', '4限'],
+        consecutivePeriods: [['3限', '4限']],
         notes: '水曜14-15コマ目は連続希望'
       },
       specialNotes: 'クリエイティブコミュニケーションラボ、デザインとプレゼンテーション担当。宮嵜さんとセット'
@@ -143,14 +145,14 @@ export const mockTeachers: Teacher[] = [
         days: ['月', '金'],
         allDay: true,
         periods: {
-          tuesday: ['1限', '2限'],
-          thursday: ['1限', '2限']
+          火: ['1限', '2限'],
+          木: ['1限', '2限']
         }
       },
       preferred: {
         periods: {
-          tuesday: ['3限', '4限'],
-          thursday: ['3限', '4限']
+          火: ['3限', '4限'],
+          木: ['3限', '4限']
         },
         days: ['水'],
         notes: '火曜、木曜3,4時間目、水曜希望'
@@ -167,8 +169,8 @@ export const mockTeachers: Teacher[] = [
     constraints: {
       confirmed: {
         periods: {
-          monday: ['3限', '4限'],
-          thursday: ['2限', '3限', '4限']
+          月: ['3限', '4限'],
+          木: ['2限', '3限', '4限']
         }
       },
       unavailable: {
@@ -273,8 +275,8 @@ export const mockTeachers: Teacher[] = [
       },
       preferred: {
         periods: {
-          tuesday: [['1限', '2限']],
-          thursday: [['1限', '2限']]
+          火: [['1限', '2限']],
+          木: [['1限', '2限']]
         },
         notes: '火曜の午前中1・2コマ連続、木曜の午前中1・2コマ連続'
       },
@@ -297,7 +299,7 @@ export const mockTeachers: Teacher[] = [
       },
       preferred: {
         alternativePeriods: {
-          monday: ['1限', '2限']
+          月: ['1限', '2限']
         },
         notes: '月曜1,2時間目も可能'
       },
@@ -336,8 +338,8 @@ export const mockTeachers: Teacher[] = [
     constraints: {
       confirmed: {
         periods: {
-          thursday: ['4限'],
-          friday: ['3限', '4限']
+          木: ['4限'],
+          金: ['3限', '4限']
         }
       },
       unavailable: {
