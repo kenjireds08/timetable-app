@@ -13,11 +13,101 @@ export interface Teacher {
 }
 
 export interface TeacherConstraints {
+  // 確定事項
+  confirmed?: {
+    days?: DayOfWeek[];                     // 確定曜日
+    periods?: TimeSlotPeriod[];             // 確定時限
+    classesPerDay?: number;                 // 1日のコマ数
+    frequency?: string;                     // 頻度（例：隔週）
+    specialSchedule?: {                     // 特定日程の確定授業
+      date: string;
+      periods?: TimeSlotPeriod[];
+      subject?: string;
+    }[];
+    subjectSchedules?: {                    // 科目別スケジュール
+      [subject: string]: {
+        period?: string;                    // 実施期間
+        days: DayOfWeek[];
+        periods: TimeSlotPeriod[];
+        notes?: string;
+      };
+    };
+    specialTimeStart?: string;              // 特殊な開始時刻
+    makeupSchedule?: {                      // 補填授業の必要性
+      totalDelayMinutes: number;
+      makeupLocation: string;
+      makeupClasses: number;
+      notes?: string;
+    };
+  };
+
+  // 不可条件（NG）
+  unavailable?: {
+    days?: DayOfWeek[];                     // NG曜日
+    allDay?: boolean;                       // 終日NG
+    periods?: TimeSlotPeriod[] | {          // NG時限
+      [key in DayOfWeek]?: TimeSlotPeriod[];
+    };
+    specificDates?: string[];               // 特定日付NG
+    recurringTime?: {                       // 定期的なNG時間
+      day: DayOfWeek;
+      time: string;
+      notes?: string;
+    };
+  };
+
+  // 希望条件
+  preferred?: {
+    days?: DayOfWeek[];                     // 希望曜日
+    periods?: {                             // 希望時限
+      [key in DayOfWeek]?: TimeSlotPeriod[] | TimeSlotPeriod[][];
+    };
+    consecutivePeriods?: TimeSlotPeriod[][]; // 連続授業希望
+    sameSchedule?: string[];                // 同じ日程にしたい科目
+    alternativePeriods?: {                  // 代替可能な時限
+      [key in DayOfWeek]?: TimeSlotPeriod[];
+    };
+    notes?: string;                         // その他の希望
+  };
+
+  // 科目別の制約（岩木先生のような複雑なケース用）
+  confirmedForSubject?: {
+    [subject: string]: {
+      days?: DayOfWeek[];
+      periods?: TimeSlotPeriod[];
+    };
+  };
+  unavailableForSubject?: {
+    [subject: string]: {
+      days?: DayOfWeek[];
+      allDay?: boolean;
+    };
+  };
+  confirmedForSubject2?: {
+    [subject: string]: {
+      days?: DayOfWeek[];
+      periods?: TimeSlotPeriod[];
+    };
+  };
+  unavailableForSubject2?: {
+    [subject: string]: {
+      days?: DayOfWeek[];
+    };
+  };
+  preferredForSubject2?: {
+    [subject: string]: {
+      periods?: {
+        [key in DayOfWeek]?: TimeSlotPeriod[][];
+      };
+      notes?: string;
+    };
+  };
+
+  // レガシー属性（後方互換性のため）
   availableDays?: DayOfWeek[];
   unavailableDays?: DayOfWeek[];
-  requiredPeriods?: TimeSlotPeriod[];  // 指定時限のみ利用可能（Fiona先生など）
+  requiredPeriods?: TimeSlotPeriod[];
   preferConsecutiveClasses?: boolean;
-  specialTimeStart?: string;
   maxClassesPerDay?: number;
   maxClassesPerWeek?: number;
   monthlyExceptions?: {
@@ -32,27 +122,17 @@ export interface TeacherConstraints {
     description?: string;
   };
   prioritizeGapMinimization?: boolean;
+  weeklyGrouping?: boolean;
+  flexibleScheduling?: boolean;
+  changeUnavailable?: boolean;
+  availablePeriods?: {
+    [key in DayOfWeek]?: TimeSlotPeriod[];
+  };
+  unavailablePeriods?: TimeSlotPeriod[];
+  priorityOrder?: DayOfWeek[];
+  
+  // 補足情報
   specialNotes?: string;
-  // 新しい制約オプション
-  weeklyGrouping?: boolean;        // 週単位でのまとめ授業
-  flexibleScheduling?: boolean;    // 柔軟なスケジューリング許可
-  changeUnavailable?: boolean;     // 変更対応困難
-  // 確定/NG/希望の3区分
-  confirmed?: string[];             // 確定事項
-  ng?: {                           // 絶対不可条件
-    days?: string[];
-    periods?: number[];
-    dates?: string[];
-    notes?: string;
-  };
-  wish?: {                         // 希望条件
-    preferDays?: string[];
-    preferConsecutive?: boolean;
-    preferPackedDay?: boolean;
-    biweekly?: 'odd' | 'even' | null;
-    periods?: number[];
-    notes?: string;
-  };
 }
 
 export interface Subject {

@@ -7,7 +7,29 @@ export const mockTeachers: Teacher[] = [
     name: '鈴木 俊良',
     type: '常勤',
     constraints: {
-      specialNotes: 'クリエイティブコミュニケーションラボ、デザインとプレゼンテーション担当'
+      confirmed: {
+        days: ['水'],
+        specialSchedule: [
+          { date: '2025-10-15', subject: 'デザインとプレゼンテーション' },
+          { date: '2025-10-22', subject: 'デザインとプレゼンテーション' },
+          { date: '2025-10-29', subject: 'デザインとプレゼンテーション' },
+          { date: '2025-11-05', subject: 'デザインとプレゼンテーション' },
+          { date: '2025-11-12', subject: 'デザインとプレゼンテーション' },
+          { date: '2025-11-19', subject: 'デザインとプレゼンテーション' },
+          { date: '2025-11-26', subject: 'デザインとプレゼンテーション' },
+          { date: '2025-12-03', subject: 'デザインとプレゼンテーション' },
+          { date: '2025-12-10', subject: 'デザインとプレゼンテーション' },
+          { date: '2025-12-17', subject: 'デザインとプレゼンテーション' },
+          { date: '2026-01-14', subject: 'デザインとプレゼンテーション' },
+          { date: '2026-01-19', subject: '成果発表会プレゼン', periods: ['3限', '4限'] },
+          { date: '2026-01-21', subject: 'ふりかえり' }
+        ]
+      },
+      preferred: {
+        consecutivePeriods: ['3限', '4限'],
+        notes: '水曜14-15コマ目は連続希望'
+      },
+      specialNotes: 'クリエイティブコミュニケーションラボ、デザインとプレゼンテーション担当。宮嵜さんとセット'
     }
   },
   {
@@ -15,10 +37,14 @@ export const mockTeachers: Teacher[] = [
     name: '宮嵜 真由美',
     type: '常勤',
     constraints: {
-      preferredDays: ['thursday', 'friday'], // 希望曜日
-      unavailableDays: ['wednesday'], // 水曜日は絶対NG
-      priorityOrder: ['thursday', 'friday', 'tuesday', 'monday'], // 優先順位（水曜除く）
-      specialNotes: '木曜日最優先、金曜日次優先、水曜日は絶対NG。ビジネス実務担当'
+      confirmed: {
+        days: ['木', '金']
+      },
+      unavailable: {
+        days: ['月', '火', '水'],
+        allDay: true
+      },
+      specialNotes: '木曜、金曜確定。月曜、火曜、水曜終日NG。鈴木さんとセット。ビジネス実務担当'
     }
   },
   {
@@ -26,7 +52,12 @@ export const mockTeachers: Teacher[] = [
     name: '井手 修身',
     type: '非常勤',
     constraints: {
-      specialNotes: '次世代地域リーダー学担当。11/28(金)に全学年1コマ確定'
+      confirmed: {
+        specialSchedule: [
+          { date: '2025-11-28', periods: ['3限'], subject: '次世代地域リーダー学（全学年合同）' }
+        ]
+      },
+      specialNotes: '11/28(金)1コマ全学年確定。その他条件なし（確認中）'
     }
   },
   {
@@ -34,9 +65,15 @@ export const mockTeachers: Teacher[] = [
     name: '夏井 美果',
     type: '非常勤',
     constraints: {
-      requiredPeriods: ['1限', '2限'],
-      availableDays: ['thursday'],
-      specialNotes: '木曜1,2時間目。Essential English I & II担当（コンビ授業）'
+      confirmed: {
+        days: ['木'],
+        periods: ['1限', '2限']
+      },
+      unavailable: {
+        days: ['月', '火', '水', '金'],
+        allDay: true
+      },
+      specialNotes: '木曜1,2時間目確定。Essential English I & II担当（コンビ授業）。夏井さん、松永さんセット（1年）、夏井さん、副島さんセット（2年）'
     }
   },
   {
@@ -44,8 +81,15 @@ export const mockTeachers: Teacher[] = [
     name: '松永 祐一',
     type: '非常勤',
     constraints: {
-      changeUnavailable: true,
-      specialNotes: 'ビジネス日本語 I担当（コンビ授業）、変更対応困難'
+      confirmed: {
+        days: ['木'],
+        periods: ['1限']
+      },
+      unavailable: {
+        days: ['月', '火', '水', '金'],
+        allDay: true
+      },
+      specialNotes: '木曜1時間目確定。ビジネス日本語I担当（コンビ授業）。夏井さん、松永さんセット'
     }
   },
   {
@@ -53,10 +97,15 @@ export const mockTeachers: Teacher[] = [
     name: '副島 小春',
     type: '非常勤',
     constraints: {
-      requiredPeriods: ['1限'],
-      availableDays: ['thursday'],
-      changeUnavailable: true,
-      specialNotes: '木曜1時間目。ビジネス日本語 II担当（コンビ授業）、変更対応困難'
+      confirmed: {
+        days: ['木'],
+        periods: ['2限']
+      },
+      unavailable: {
+        days: ['月', '火', '水', '金'],
+        allDay: true
+      },
+      specialNotes: '木曜2時間目確定。ビジネス日本語II担当（コンビ授業）。夏井さん、副島さんセット'
     }
   },
   {
@@ -64,12 +113,20 @@ export const mockTeachers: Teacher[] = [
     name: '木下 俊和',
     type: '非常勤',
     constraints: {
-      preferredDays: ['friday', 'monday'], // 金曜日を最優先、月曜日を次優先
-      preferConsecutiveClasses: true,
-      maxClassesPerDay: 2,
-      priorityOrder: ['friday', 'monday'], // 金曜日→月曜日の順
-      flexibleScheduling: true, // 金曜日が埋まったら月曜日使用OK
-      specialNotes: '金曜日最優先、満杯なら月曜日も利用、2コマ連続希望'
+      confirmed: {
+        days: ['月', '金'],
+        classesPerDay: 2
+      },
+      unavailable: {
+        days: ['火', '木'],
+        allDay: true
+      },
+      preferred: {
+        days: ['月', '水', '金'],
+        consecutivePeriods: [['1限', '2限'], ['2限', '3限']],
+        notes: '1、2限の連続、または2、3限の連続希望'
+      },
+      specialNotes: '月曜、金曜1日2コマ×2日確定。火曜、木曜終日NG。調整の余地あり'
     }
   },
   {
@@ -77,13 +134,28 @@ export const mockTeachers: Teacher[] = [
     name: '田上 寛美',
     type: '常勤',
     constraints: {
-      unavailableDays: ['friday'],
-      availablePeriods: {
-        tuesday: ['3限', '4限'],
-        thursday: ['3限', '4限']
+      confirmed: {
+        specialSchedule: [
+          { date: '2025-10-22', periods: ['3限', '4限'], subject: 'キャリア実践I' }
+        ]
       },
-      monthlyExceptions: [{ day: 'wednesday', periods: ['1限', '2限'], frequency: 1 }],
-      specialNotes: '火木は3,4限のみ、水曜は終日OKだが月1回午前NG、金曜終日NG'
+      unavailable: {
+        days: ['月', '金'],
+        allDay: true,
+        periods: {
+          tuesday: ['1限', '2限'],
+          thursday: ['1限', '2限']
+        }
+      },
+      preferred: {
+        periods: {
+          tuesday: ['3限', '4限'],
+          thursday: ['3限', '4限']
+        },
+        days: ['水'],
+        notes: '火曜、木曜3,4時間目、水曜希望'
+      },
+      specialNotes: '10/22(水)3,4時間目2コマ確定。月曜は不規則な予定ありNG'
     }
   },
   
@@ -93,8 +165,17 @@ export const mockTeachers: Teacher[] = [
     name: '小山 善文',
     type: '非常勤',
     constraints: {
-      availableDays: ['thursday'],
-      specialNotes: '木曜日。地域課題×IT、セキュリティ基礎担当'
+      confirmed: {
+        periods: {
+          monday: ['3限', '4限'],
+          thursday: ['2限', '3限', '4限']
+        }
+      },
+      unavailable: {
+        days: ['火', '水', '金'],
+        allDay: true
+      },
+      specialNotes: '月曜3,4時間目、木曜2,3,4時間目確定。地域課題×IT、セキュリティ基礎担当'
     }
   },
   {
@@ -102,7 +183,12 @@ export const mockTeachers: Teacher[] = [
     name: '西川 徹',
     type: '非常勤',
     constraints: {
-      specialNotes: 'IoTとデータ活用 I & II担当'
+      preferred: {
+        days: ['水', '木'],
+        consecutivePeriods: [['1限', '2限'], ['2限', '3限']],
+        notes: '週1日、I（1年生）とII（2年生）2コマ続き'
+      },
+      specialNotes: 'IoTとデータ活用I & II担当。週1日で1年と2年を連続授業'
     }
   },
   {
@@ -110,9 +196,14 @@ export const mockTeachers: Teacher[] = [
     name: '岩木 健',
     type: '非常勤',
     constraints: {
-      availableDays: ['wednesday'],
-      weeklyGrouping: true,
-      specialNotes: '後期は水曜に変更希望、週1日にまとめて。生成AI開発、情報視覚化担当'
+      confirmed: {
+        days: ['水']
+      },
+      unavailable: {
+        days: ['月', '火', '木', '金'],
+        allDay: true
+      },
+      specialNotes: '生成AI開発担当。水曜日のみ、他曜日終日NG'
     }
   },
   {
@@ -120,9 +211,34 @@ export const mockTeachers: Teacher[] = [
     name: '孫 寧平',
     type: '非常勤',
     constraints: {
-      availableDays: ['tuesday', 'wednesday', 'thursday'],
-      changeUnavailable: true,
-      specialNotes: '火水木のみ、変更対応困難。1年ITはたかねこ実施要望'
+      confirmed: {
+        subjectSchedules: {
+          'データベース概論': {
+            period: '10-11月（後期前半）',
+            days: ['木'],
+            periods: ['3限', '4限']
+          },
+          'オブジェクト指向プログラミング': {
+            days: ['火', '水'],
+            periods: ['3限', '4限'],
+            notes: '[Webアプリ開発]と同じ日程(連続コマ)'
+          },
+          'データベース設計': {
+            period: '12-1月（後期後半）',
+            days: ['木'],
+            periods: ['3限', '4限']
+          },
+          'Webアプリ開発': {
+            days: ['火', '水'],
+            periods: ['3限', '4限'],
+            notes: '[オブジェクト指向プログラミング]と同じ日程(連続コマ)'
+          }
+        }
+      },
+      unavailable: {
+        days: ['月', '金']
+      },
+      specialNotes: '月曜、金曜NG。1年ITは「たかねこ」実施要望'
     }
   },
   {
@@ -130,11 +246,18 @@ export const mockTeachers: Teacher[] = [
     name: '森田 典子',
     type: '非常勤',
     constraints: {
-      availableDays: ['wednesday', 'friday'],
-      maxClassesPerWeek: 3,
-      weeklyGrouping: true,
-      unavailablePeriods: ['1限'],
-      specialNotes: '水・金で週3コマ（卒業制作2＋進級制作1）まとめて、1限以外、1日集約希望'
+      confirmed: {
+        days: ['火', '水']
+      },
+      unavailable: {
+        periods: ['1限'],
+        days: ['月', '木', '金']
+      },
+      preferred: {
+        sameSchedule: ['卒業制作', '進級制作'],
+        notes: '[卒業制作]と[進級制作]を同じ日程(連続コマ)'
+      },
+      specialNotes: '火曜、水曜確定。月曜、木曜、金曜の1時間目NG'
     }
   },
   {
@@ -142,7 +265,20 @@ export const mockTeachers: Teacher[] = [
     name: '村上 大輔',
     type: '非常勤',
     constraints: {
-      specialNotes: '情報視覚化担当（岩木と共同）'
+      confirmed: {
+        days: ['火', '木']
+      },
+      unavailable: {
+        days: ['水', '金']
+      },
+      preferred: {
+        periods: {
+          tuesday: [['1限', '2限']],
+          thursday: [['1限', '2限']]
+        },
+        notes: '火曜の午前中1・2コマ連続、木曜の午前中1・2コマ連続'
+      },
+      specialNotes: '情報視覚化担当（単独）。火曜・木曜の1-2限連続、水曜・金曜NG'
     }
   },
   {
@@ -150,8 +286,22 @@ export const mockTeachers: Teacher[] = [
     name: '吉井 幸宗',
     type: '非常勤',
     constraints: {
-      changeUnavailable: true,
-      specialNotes: 'セキュリティ診断担当、変更対応困難'
+      confirmed: {
+        frequency: '隔週',
+        days: ['金'],
+        periods: ['3限', '4限']
+      },
+      unavailable: {
+        days: ['火', '水', '木'],
+        allDay: true
+      },
+      preferred: {
+        alternativePeriods: {
+          monday: ['1限', '2限']
+        },
+        notes: '月曜1,2時間目も可能'
+      },
+      specialNotes: 'セキュリティ診断担当。隔週の金曜3,4時間目確定'
     }
   },
   
@@ -161,11 +311,22 @@ export const mockTeachers: Teacher[] = [
     name: 'Fiona',
     type: '非常勤',
     constraints: {
-      requiredPeriods: ['3限'],
-      availableDays: ['monday'],
-      specialTimeStart: '13:15',
-      changeUnavailable: true,
-      specialNotes: '月曜3限固定（13:15-14:45）、4限必ず空ける、変更対応困難'
+      confirmed: {
+        days: ['木'],
+        periods: ['3限', '4限'],
+        specialTimeStart: '13:15',
+        makeupSchedule: {
+          totalDelayMinutes: 240, // 16コマ×15分遅れ
+          makeupLocation: '月',
+          makeupClasses: 3,
+          notes: '後期16コマ×遅れ15分＝240分を月曜3コマで補填'
+        }
+      },
+      unavailable: {
+        days: ['火', '水', '金'],
+        allDay: true
+      },
+      specialNotes: '木曜3,4時間目確定（3限は13:15開始で15分遅れ）。不足分240分を月曜で補填する必要あり'
     }
   },
   {
@@ -173,10 +334,17 @@ export const mockTeachers: Teacher[] = [
     name: 'Lee',
     type: '非常勤',
     constraints: {
-      requiredPeriods: ['3限', '4限'],
-      availableDays: ['thursday', 'friday'],
-      changeUnavailable: true,
-      specialNotes: '木曜4限、金曜3,4限、変更対応困難'
+      confirmed: {
+        periods: {
+          thursday: ['4限'],
+          friday: ['3限', '4限']
+        }
+      },
+      unavailable: {
+        days: ['月', '火', '水'],
+        allDay: true
+      },
+      specialNotes: '木曜4時間目、金曜3,4時間目確定。Business English I & II担当'
     }
   },
   {
@@ -184,8 +352,21 @@ export const mockTeachers: Teacher[] = [
     name: '廣瀬 実華',
     type: '常勤',
     constraints: {
-      unavailableDays: ['wednesday'],
-      specialNotes: '水曜日は商工会個別相談のためNG。SNS/PR実践、Webデザイン担当。9/30(火)Webデザイン1コマ確定'
+      confirmed: {
+        days: ['月', '火', '木', '金'],
+        specialSchedule: [
+          { date: '2025-09-30', periods: ['1限'], subject: 'Webデザイン（ノーコード）' }
+        ]
+      },
+      unavailable: {
+        specificDates: ['2025-10-17', '2025-12-01', '2025-12-02'],
+        recurringTime: {
+          day: '月',
+          time: '10:00-11:00',
+          notes: '毎週月曜10:00-11:00NG'
+        }
+      },
+      specialNotes: '月曜、火曜、木曜、金曜確定。10/17(金)、12/1(月)、12/2(火)NG。毎週月曜10:00-11:00NG。SNS/PR実践、Webデザイン担当'
     }
   },
   {
@@ -193,34 +374,36 @@ export const mockTeachers: Teacher[] = [
     name: '久保 尭之',
     type: '常勤',
     constraints: {
-      specialNotes: '地域課題実践プロジェクト、ビジネス&マーケティング、観光関連、卒業プロジェクト担当'
+      specialNotes: '条件なし（確認中）。観光地域づくり実践（黒川温泉FW）は基本月曜設定科目。地域課題実践プロジェクト、ビジネス&マーケティング、観光関連、卒業プロジェクト担当'
     }
   }
-];
+];;
 
 export const mockSubjects: Subject[] = [
   // 共通科目
+  // クリエイティブコミュニケーションラボ I/II（全学年合同）
   {
     id: 's1',
     name: 'クリエイティブコミュニケーションラボ I/II',
     teacherIds: ['t1', 't2'],  // 鈴木俊良、宮嵜真由美
     department: '共通',
-    grade: '全学年（合同）',
+    grade: '全学年',
     totalClasses: 16,
-    lessonType: '通常',
-    availableClassroomIds: ['c1'],  // たかねこのみ
-    specialRequirements: '全学年合同授業（39人）、たかねこ限定'
+    lessonType: '合同',
+    availableClassroomIds: ['c1'],  // たかねこ限定（全学年合同）
+    specialRequirements: '共通科目・全4グループ合同（IT1年+IT2年+TD1年+TD2年）、たかねこ限定'
   },
+  // 次世代地域リーダー学 - 3パターン（I/II合同、I単独、II単独）
   {
     id: 's2',
-    name: '次世代地域リーダー学 I/II（合同）',
+    name: '次世代地域リーダー学 I/II',
     teacherIds: ['t3'],  // 井手修身
     department: '共通',
-    grade: '全学年（合同）',
+    grade: '全学年',
     totalClasses: 4,
-    lessonType: '通常',
-    availableClassroomIds: ['c1'],  // たかねこのみ
-    specialRequirements: '全学年合同、たかねこ限定。11/28(金)1コマ確定'
+    lessonType: '合同',
+    availableClassroomIds: ['c1'],  // たかねこのみ（全学年合同）,
+    specialRequirements: '共通科目・全4グループ合同版、11/28(金)全学年1コマ確定（午前でも午後でも）'
   },
   {
     id: 's3',
@@ -230,8 +413,8 @@ export const mockSubjects: Subject[] = [
     grade: '1年',
     totalClasses: 4,
     lessonType: '通常',
-    availableClassroomIds: ['c1', 'c4', 'c5'],  // たかねこ、ICT1、ICT2
-    specialRequirements: '1年生向け'
+    availableClassroomIds: ['c1', 'c4', 'c5'],  // たかねこ、ICT1、ICT2,
+    specialRequirements: '1年生のみ版'
   },
   {
     id: 's4',
@@ -241,8 +424,8 @@ export const mockSubjects: Subject[] = [
     grade: '2年',
     totalClasses: 4,
     lessonType: '通常',
-    availableClassroomIds: ['c2', 'c3', 'c4', 'c5'],  // しらかわ、なか、ICT1、ICT2
-    specialRequirements: '2年生向け'
+    availableClassroomIds: ['c2', 'c3', 'c4', 'c5'],  // しらかわ、なか、ICT1、ICT2,
+    specialRequirements: '2年生のみ版'
   },
   {
     id: 's5',
@@ -342,7 +525,7 @@ export const mockSubjects: Subject[] = [
   },
   {
     id: 's13',
-    name: 'キャリア実践I',
+    name: 'キャリア実践 I',
     teacherIds: ['t8'],  // 田上寛美
     department: '共通',
     grade: '1年',
@@ -553,27 +736,29 @@ export const mockSubjects: Subject[] = [
     availableClassroomIds: ['c2', 'c3', 'c4', 'c5'],  // しらかわ、なか、ICT1、ICT2
     specialRequirements: '木曜4限、金曜3,4限'
   },
+  // SNS/PR実践 I/II（全学年合同）
   {
     id: 's32',
     name: 'SNS/PR実践 I/II',
     teacherIds: ['t18'],  // 廣瀬実華
-    department: '共通',
-    grade: '全学年（合同）',
+    department: '地域観光デザイン',
+    grade: '全学年',
     totalClasses: 16,
-    lessonType: '通常',
-    availableClassroomIds: ['c1'],  // たかねこのみ
-    specialRequirements: '全学年合同、水曜NG'
+    lessonType: '合同',
+    availableClassroomIds: ['c1'],  // たかねこのみ（TD全学年合同）
+    specialRequirements: 'TD専門全学年合同（TD1年+TD2年のみ）、水曜NG'
   },
+  // 地域課題実践プロジェクト I/II（全学年合同）
   {
     id: 's33',
     name: '地域課題実践プロジェクト I/II',
     teacherIds: ['t19'],  // 久保尭之
-    department: '共通',
-    grade: '全学年（合同）',
+    department: '地域観光デザイン',
+    grade: '全学年',
     totalClasses: 16,
-    lessonType: '通常',
-    availableClassroomIds: ['c1'],  // たかねこのみ
-    specialRequirements: '全学年合同'
+    lessonType: '合同',
+    availableClassroomIds: ['c1'],  // たかねこのみ（TD全学年合同）
+    specialRequirements: 'TD専門全学年合同（TD1年+TD2年のみ）'
   },
   {
     id: 's34',
@@ -632,7 +817,7 @@ export const mockSubjects: Subject[] = [
   },
   {
     id: 's39',
-    name: '観光ビジネスDX',
+    name: '観光地域マネジメント',
     teacherIds: ['t19'],  // 久保尭之
     department: '地域観光デザイン',
     grade: '2年',
@@ -647,10 +832,10 @@ export const mockSubjects: Subject[] = [
     teacherIds: ['t19'],  // 久保尭之
     department: '地域観光デザイン',
     grade: '2年',
-    totalClasses: 48,
+    totalClasses: 32,
     lessonType: '通常',
     availableClassroomIds: ['c2', 'c3', 'c4', 'c5'],  // しらかわ、なか、ICT1、ICT2
-    specialRequirements: '週3コマ程度'
+    specialRequirements: ''
   },
   {
     id: 's41',
@@ -661,7 +846,7 @@ export const mockSubjects: Subject[] = [
     totalClasses: 16,
     lessonType: '通常',
     availableClassroomIds: ['c2', 'c3', 'c4', 'c5'],  // しらかわ、なか、ICT1、ICT2
-    specialRequirements: ''
+    specialRequirements: 'TD2年専門科目'
   }
 ];
 

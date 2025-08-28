@@ -273,11 +273,12 @@ const BasicSettings = ({
                 checked={mondayAvoid}
                 onChange={(e) => handleMondayAvoidChange(e.target.checked)}
               />
-              <span>月曜日を予備日として使用しない（火〜金でスケジュール作成）</span>
+              <span>月曜は原則オフ（確定がある場合のみ割当）</span>
             </label>
             <small>
-              月曜日は緊急授業や健康診断等のために空けておきます。
-              チェックを外すと月曜日も通常の授業日として使用されます。
+              通常は火〜金で自動割当します。教師カードの『確定』に月曜が含まれる場合は、その分だけ月曜へ割当を許可します。
+              <br />
+              <strong>※ 確定が最優先。確定に月曜が含まれれば常に配置されます。</strong>
             </small>
           </div>
         </div>
