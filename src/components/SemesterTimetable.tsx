@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Calendar, CheckCircle, AlertCircle, Edit3, Trash2, Plus } from 'lucide-react';
+import { Calendar, CheckCircle, AlertCircle, Edit3, Trash2, Plus, UserCheck } from 'lucide-react';
 import type { Teacher, Subject, Classroom } from '../types';
 import SemesterExportButtons from './SemesterExportButtons';
 
@@ -577,6 +577,98 @@ const SemesterTimetable = ({
     });
   }, [activeTab]);
 
+  // コンビ授業を完成させる関数
+  const completeComboClasses = useCallback(() => {
+    if (!semesterData) return;
+
+    // まず、第17週（1/22）の既存のコンビ授業を削除
+    setSemesterData(prev => {
+      if (!prev) return prev;
+      
+      const newData = { ...prev };
+      
+      // 各グループから第17週のコンビ授業を削除
+      for (const groupKey of Object.keys(newData.groups)) {
+        const groupData = newData.groups[groupKey];
+        groupData.schedule = groupData.schedule.filter(entry => {
+          // 第17週のコンビ授業を削除
+          if (entry.timeSlot.week === 17 && 
+              (entry.subjectName.includes('Essential English') || 
+               entry.subjectName.includes('ビジネス日本語'))) {
+            return false;
+          }
+          return true;
+        });
+      }
+      
+      // 1/22（木曜日、第17週）に追加
+      // 1年生は1限、2年生は2限
+      const week = 17;
+      const day = '木';
+      
+      // すべてのグループに同時に追加
+      for (const groupKey of Object.keys(newData.groups)) {
+        const groupData = newData.groups[groupKey];
+        const isFirstYear = groupKey.includes('1');
+        
+        // 1年生は1限、2年生は2限に追加
+        const targetPeriod = isFirstYear ? '1限' : '2限';
+        
+        // Essential English側を追加
+        const essentialSubject = _subjects.find(s => 
+          s.name === (isFirstYear ? 'Essential English I' : 'Essential English II')
+        );
+        const essentialTeacher = teachers.find(t => t.id === essentialSubject?.teacherIds[0]);
+        
+        const essentialEntry: SemesterEntry = {
+          id: `combo-e-${groupKey}-w${week}-${targetPeriod}-${Date.now()}`,
+          timeSlot: {
+            week,
+            date: '2026-01-22',
+            dayOfWeek: day,
+            period: targetPeriod
+          },
+          subjectId: essentialSubject?.id || (isFirstYear ? 's5' : 's6'),
+          subjectName: `${essentialSubject?.name || (isFirstYear ? 'Essential English I' : 'Essential English II')} [コンビ]`,
+          teacherId: essentialTeacher?.id || 't4',
+          teacherName: essentialTeacher?.name || '夏井美果',
+          classroomId: groupKey.includes('it') ? 'c4' : 'c5', // IT -> ICT1, Design -> ICT2
+          classroomName: groupKey.includes('it') ? 'ICT1' : 'ICT2'
+        };
+        groupData.schedule.push(essentialEntry);
+        
+        // ビジネス日本語側を追加
+        const businessSubject = _subjects.find(s => 
+          s.name === (isFirstYear ? 'ビジネス日本語 I' : 'ビジネス日本語 II')
+        );
+        const businessTeacher = teachers.find(t => t.id === businessSubject?.teacherIds[0]);
+        
+        const businessEntry: SemesterEntry = {
+          id: `combo-b-${groupKey}-w${week}-${targetPeriod}-${Date.now()}`,
+          timeSlot: {
+            week,
+            date: '2026-01-22',
+            dayOfWeek: day,
+            period: targetPeriod
+          },
+          subjectId: businessSubject?.id || (isFirstYear ? 's7' : 's8'),
+          subjectName: `${businessSubject?.name || (isFirstYear ? 'ビジネス日本語 I' : 'ビジネス日本語 II')} [コンビ]`,
+          teacherId: businessTeacher?.id || (isFirstYear ? 't5' : 't6'),
+          teacherName: businessTeacher?.name || (isFirstYear ? '松永祐一' : '副島小春'),
+          classroomId: groupKey.includes('it') ? 'c2' : 'c3', // IT -> しらかわ, Design -> なか
+          classroomName: groupKey.includes('it') ? 'しらかわ' : 'なか'
+        };
+        groupData.schedule.push(businessEntry);
+      }
+      
+      // LocalStorageも更新
+      localStorage.setItem('generatedSemesterData', JSON.stringify(newData));
+      
+      onValidationError('✅ コンビ授業を1/22に追加しました（16/16完成）');
+      return newData;
+    });
+  }, [semesterData, _subjects, teachers, onValidationError]);
+
   if (!semesterData) {
     return (
       <div className="semester-loading">
@@ -660,13 +752,14 @@ const SemesterTimetable = ({
   };
 
   // グループ名のマッピングを作成
-  const groupNames = Object.keys(semesterData.groups).reduce((acc, key) => {
+  const groupNames = semesterData ? Object.keys(semesterData.groups).reduce((acc, key) => {
     acc[key] = semesterData.groups[key].name;
     return acc;
-  }, {} as {[key: string]: string});
+  }, {} as {[key: string]: string}) : {};
 
   // 各グループの総授業数を計算
   const getGroupTotalClasses = (groupKey: string) => {
+    if (!semesterData || !semesterData.groups[groupKey]) return 0;
     return semesterData.groups[groupKey].schedule.length;
   };
 
@@ -697,175 +790,137 @@ const SemesterTimetable = ({
           })}
         </div>
 
-        {/* Calendar Grid */}
-        <div className="semester-calendar">
-          <div className="calendar-header">
-            <div className="calendar-title-section">
-              <h3>{currentGroup.name} - 半年分時間割</h3>
-              <p>週数: {actualWeeks}週 ({startDate} 〜 {endDate})</p>
-            </div>
-            <div className="semester-title-display">
-              {semesterTitle}
-            </div>
-          </div>
-
-          <div className="calendar-grid-container">
-            {/* 各週を独立したテーブルとして表示 */}
-            {Array.from({ length: actualWeeks }, (_, weekIndex) => {
-              const weekNumber = weekIndex + 1;
-              const weekDates = getWeekDates(weekNumber);
-              
-              return (
-                <div key={weekNumber} className="week-container">
-                  <div className="week-header">
-                    <h4>第{weekNumber}週 ({weekDates[0].formatted} 〜 {weekDates[4].formatted})</h4>
-                  </div>
-                  
-                  <div className="week-grid">
-                    {/* 曜日ヘッダー（日付付き） */}
-                    <div className="time-column-header"></div>
-                    {days.map((day, dayIndex) => (
-                      <div key={day} className={`day-header-with-date ${weekDates[dayIndex].isHoliday ? 'holiday' : ''}`}>
-                        <div className="day-name">{day}</div>
-                        <div className="day-date">
-                          {weekDates[dayIndex].formatted}
-                          {weekDates[dayIndex].isHoliday && <span className="holiday-indicator">🎌</span>}
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {/* 各時限の行 */}
-                    {periods.map((period) => (
-                      <React.Fragment key={period.name}>
-                        <div className="time-column">
-                          <div className="period-name">{period.name}</div>
-                          <div className="period-time">{period.time}</div>
-                        </div>
-                        {days.map(day => {
-                          const entries = currentGroup.schedule.filter(entry =>
-                            entry.timeSlot.week === weekNumber &&
-                            entry.timeSlot.dayOfWeek === day &&
-                            entry.timeSlot.period === period.name
-                          );
-
-                          // 各エントリーの進捗情報を計算
-                          const entriesWithProgress = entries.map(entry => {
-                            // 同じ科目（タグを除去した名前で比較）の全エントリを取得
-                            const baseSubjectName = entry.subjectName
-                              .replace(' [コンビ]', '')
-                              .replace(' [共通]', '')
-                              .replace(' [合同]', '');
-                            
-                            const sameSubjectEntries = currentGroup.schedule
-                              .filter(e => {
-                                const entryBaseName = e.subjectName
-                                  .replace(' [コンビ]', '')
-                                  .replace(' [共通]', '')
-                                  .replace(' [合同]', '');
-                                return entryBaseName === baseSubjectName && e.teacherName === entry.teacherName;
-                              })
-                              .sort((a, b) => {
-                                if (a.timeSlot.week !== b.timeSlot.week) {
-                                  return a.timeSlot.week - b.timeSlot.week;
-                                }
-                                const dayOrder = { '月': 1, '火': 2, '水': 3, '木': 4, '金': 5 };
-                                return dayOrder[a.timeSlot.dayOfWeek] - dayOrder[b.timeSlot.dayOfWeek];
-                              });
-
-                            // 科目管理から正しい総コマ数を取得（柔軟な名前照合）
-                            const matchingSubject = _subjects.find(s => {
-                              // 完全一致
-                              if (s.name === baseSubjectName || s.name === entry.subjectName) {
-                                return true;
-                              }
-                              
-                              // ローマ数字の正規化（I ↔ Ⅰ, II ↔ Ⅱ）
-                              const normalizeRoman = (name: string) => {
-                                return name
-                                  .replace(/\sI$/, ' Ⅰ')
-                                  .replace(/\sII$/, ' Ⅱ')
-                                  .replace(/\sIII$/, ' Ⅲ')
-                                  .replace(/\sⅠ$/, ' I')
-                                  .replace(/\sⅡ$/, ' II')
-                                  .replace(/\sⅢ$/, ' III');
-                              };
-                              
-                              const normalizedSubject = normalizeRoman(s.name);
-                              const normalizedBase = normalizeRoman(baseSubjectName);
-                              const normalizedEntry = normalizeRoman(entry.subjectName);
-                              
-                              return normalizedSubject === normalizedBase || normalizedSubject === normalizedEntry;
-                            });
-                            
-                            if (!matchingSubject) {
-                              console.warn(`⚠️ 科目管理で見つからない: "${entry.subjectName}" → "${baseSubjectName}"`);
-                              console.warn(`   利用可能な科目名:`, _subjects.map(s => s.name));
-                            } else {
-                              console.log(`✅ 科目照合成功: "${entry.subjectName}" → "${matchingSubject.name}"`);
-                            }
-                            
-                            const totalClasses = matchingSubject ? matchingSubject.totalClasses : sameSubjectEntries.length;
-                            const currentIndex = sameSubjectEntries.findIndex(e => e.id === entry.id);
-                            const currentNumber = currentIndex + 1;
-                            
-                            // 進捗表示の修正：実際の配置数と目標数を比較
-                            const actualPlaced = sameSubjectEntries.length;
-                            const targetTotal = totalClasses;
-                            
-                            console.log(`📊 進捗計算: "${baseSubjectName}" - 配置済み: ${actualPlaced}, 目標: ${targetTotal}, マッチした科目: ${matchingSubject?.name || 'なし'}`);
-                            
-                            const progressInfo = {
-                              current: Math.min(currentNumber, targetTotal), // 目標を超えないよう制限
-                              total: Math.max(targetTotal, actualPlaced) // 実際の配置が目標を超える場合は実際の数を使用
-                            };
-
-                            return { entry, progressInfo };
-                          });
-                          
-                          const dayIndex = days.indexOf(day);
-                          const isHolidayCell = weekDates[dayIndex]?.isHoliday || false;
-                          
-                          // 時限単位でスケジュール調整要求をチェック
-                          const currentDate = weekDates[dayIndex]?.date;
-                          const scheduleRequestCell = currentDate ? isScheduleRequest(currentDate, period.name) : null;
-
-                          return (
-                            <DroppableCell
-                              key={`${day}-${period.name}`}
-                              week={weekNumber}
-                              day={day}
-                              period={period.name}
-                              entries={entries}
-                              entriesWithProgress={entriesWithProgress}
-                              onDrop={handleDrop}
-                              onAdd={handleAddEntry}
-                              isHoliday={isHolidayCell}
-                              scheduleRequest={scheduleRequestCell}
-                              subjects={_subjects}
-                            />
-                          );
-                        })}
-                      </React.Fragment>
-                    ))}
-                  </div>
+        {/* Group Schedule */}
+        {currentGroup && (
+          <div className="semester-schedule">
+            <div className="calendar-header">
+              <div className="header-left">
+                <h3>{currentGroup.name} - 半年分時間割</h3>
+                <p>週数: {actualWeeks}週 ({startDate} 〜 {endDate})</p>
+              </div>
+              <div className="header-right">
+                <div className="semester-title-display">
+                  {semesterTitle}
                 </div>
-              );
-            })}
+              </div>
           </div>
 
-          {/* Current Tab Summary */}
-          <div className="semester-summary">
-            <div className="current-tab-summary">
-              <span className="total-classes-text">総授業数: {getGroupTotalClasses(activeTab)}コマ</span>
+          {/* Instructions Panel */}
+          <div className="instructions-panel">
+            <div className="instruction-item">
+              <UserCheck size={16} />
+              <span>ドラッグ＆ドロップで授業を移動</span>
+            </div>
+            <div className="instruction-item">
+              <Calendar size={16} />
+              <span>🎌は祝日</span>
+            </div>
+            <div className="instruction-item">
+              <AlertCircle size={16} />
+              <span>赤い背景は制約エラー</span>
             </div>
           </div>
 
-          {/* Export Controls */}
-          <SemesterExportButtons
-            groupStatuses={groupStatuses}
-            groupNames={groupNames}
-          />
-        </div>
+          {/* Weekly Schedules */}
+          <div className="weeks-container">
+          {Array.from({ length: actualWeeks }, (_, weekIndex) => {
+            const weekNumber = weekIndex + 1;
+            const weekDates = getWeekDates(weekNumber);
+            
+            // Get entries for this week
+            const weekEntries = currentGroup.schedule.filter(entry => 
+              entry.timeSlot.week === weekNumber
+            );
+
+            // Calculate progress for each entry
+            const entriesWithProgress = weekEntries.map(entry => {
+              const subject = _subjects.find(s => s.id === entry.subjectId);
+              const allEntries = currentGroup.schedule.filter(e => e.subjectId === entry.subjectId);
+              const currentIndex = allEntries.findIndex(e => e.id === entry.id);
+              
+              return {
+                entry,
+                progressInfo: {
+                  current: currentIndex + 1,
+                  total: subject?.totalClasses || 16
+                }
+              };
+            });
+
+            return (
+              <div key={weekNumber} className="calendar-week">
+                <div className="week-header">
+                  <span className="week-title">第{weekNumber}週 ({weekDates[0].formatted} - {weekDates[4].formatted})</span>
+                </div>
+                <div className="week-grid">
+                  {/* Days header */}
+                  <div className="grid-corner"></div>
+                  {days.map((day, dayIndex) => {
+                    const dayData = weekDates[dayIndex];
+                    return (
+                      <div key={day} className={`grid-day-header ${dayData.isHoliday ? 'holiday-header' : ''} ${dayData.scheduleRequest ? 'schedule-request-header' : ''}`}>
+                        <div>{day}曜日</div>
+                        <div className="day-date">{dayData.formatted}</div>
+                        {dayData.isHoliday && <div className="holiday-label">🎌 休日</div>}
+                        {dayData.scheduleRequest && !dayData.isHoliday && (
+                          <div className="schedule-request-label" style={{ color: '#ec4899', fontSize: '11px' }}>
+                            {dayData.scheduleRequest.description}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Periods */}
+                  {periods.map(period => (
+                    <React.Fragment key={period.name}>
+                      <div className="grid-period-header">
+                        <div>{period.name}</div>
+                        <div className="period-time">{period.time}</div>
+                      </div>
+                      {days.map((day, dayIndex) => {
+                        const dayData = weekDates[dayIndex];
+                        const cellEntries = entriesWithProgress.filter(({ entry }) =>
+                          entry.timeSlot.dayOfWeek === day &&
+                          entry.timeSlot.period === period.name
+                        );
+                        const scheduleRequest = isScheduleRequest(dayData.date, period.name);
+                        
+                        return (
+                          <DroppableCell
+                            key={`${day}-${period.name}`}
+                            week={weekNumber}
+                            day={day}
+                            period={period.name}
+                            entries={cellEntries.map(e => e.entry)}
+                            entriesWithProgress={cellEntries}
+                            onDrop={handleDrop}
+                            onAdd={handleAddEntry}
+                            isHoliday={dayData.isHoliday}
+                            scheduleRequest={scheduleRequest}
+                            subjects={_subjects}
+                          />
+                        );
+                      })}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          </div>
+
+          {/* Footer Section */}
+          <div className="semester-footer">
+            <div className="footer-left">
+              <span className="total-classes">総授業数: {getGroupTotalClasses(activeTab)}コマ</span>
+            </div>
+            <div className="footer-right">
+              <SemesterExportButtons groupStatuses={groupStatuses} groupNames={groupNames} />
+            </div>
+          </div>
+          </div>
+        )}
       </div>
     </DndProvider>
   );

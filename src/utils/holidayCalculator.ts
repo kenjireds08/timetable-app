@@ -219,45 +219,12 @@ function calculateYearHolidays(year: number): Holiday[] {
 }
 
 /**
- * 期間内の祝日を取得
+ * 期間内の祝日を取得する共通処理
  * @param startDate 開始日 (YYYY-MM-DD)
  * @param endDate 終了日 (YYYY-MM-DD)
- * @returns 期間内の祝日リスト
+ * @returns 期間内のユニークな祝日リスト
  */
-export function getHolidaysInPeriod(startDate: string, endDate: string): string[] {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  
-  // 関係する年を特定
-  const startYear = start.getFullYear();
-  const endYear = end.getFullYear();
-  
-  const allHolidays: Holiday[] = [];
-  
-  // 各年の祝日を計算
-  for (let year = startYear; year <= endYear; year++) {
-    allHolidays.push(...calculateYearHolidays(year));
-  }
-  
-  // 期間内の祝日のみフィルタリング
-  const holidaysInPeriod = allHolidays.filter(holiday => {
-    const holidayDate = new Date(holiday.date);
-    return holidayDate >= start && holidayDate <= end;
-  });
-  
-  // 日付のみを返す（重複除去）
-  const uniqueHolidays = [...new Set(holidaysInPeriod.map(h => h.date))];
-  
-  return uniqueHolidays.sort();
-}
-
-/**
- * 祝日の詳細情報を取得
- * @param startDate 開始日 (YYYY-MM-DD)
- * @param endDate 終了日 (YYYY-MM-DD)
- * @returns 期間内の祝日詳細リスト
- */
-export function getHolidayDetailsInPeriod(startDate: string, endDate: string): Holiday[] {
+function getHolidaysInPeriodBase(startDate: string, endDate: string): Holiday[] {
   const start = new Date(startDate);
   const end = new Date(endDate);
   
@@ -287,4 +254,25 @@ export function getHolidayDetailsInPeriod(startDate: string, endDate: string): H
   }, []);
   
   return uniqueHolidays.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
+ * 期間内の祝日を取得
+ * @param startDate 開始日 (YYYY-MM-DD)
+ * @param endDate 終了日 (YYYY-MM-DD)
+ * @returns 期間内の祝日リスト（日付のみ）
+ */
+export function getHolidaysInPeriod(startDate: string, endDate: string): string[] {
+  const holidays = getHolidaysInPeriodBase(startDate, endDate);
+  return holidays.map(h => h.date);
+}
+
+/**
+ * 祝日の詳細情報を取得
+ * @param startDate 開始日 (YYYY-MM-DD)
+ * @param endDate 終了日 (YYYY-MM-DD)
+ * @returns 期間内の祝日詳細リスト
+ */
+export function getHolidayDetailsInPeriod(startDate: string, endDate: string): Holiday[] {
+  return getHolidaysInPeriodBase(startDate, endDate);
 }

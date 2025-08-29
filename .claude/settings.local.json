@@ -56,7 +56,17 @@
       "Read(/Users/kikuchikenji/Downloads/**)",
       "Read(/Users/kikuchikenji/Library/Application Support/CleanShot/media/media_PIaeCWCdot/**)",
       "Read(/var/folders/qx/6_t416w11yv492lx56z4lzr00000gn/T/TemporaryItems/NSIRD_screencaptureui_HlUuWR/**)",
-      "Read(/var/folders/qx/6_t416w11yv492lx56z4lzr00000gn/T/TemporaryItems/NSIRD_screencaptureui_mWBK25/**)"
+      "Read(/var/folders/qx/6_t416w11yv492lx56z4lzr00000gn/T/TemporaryItems/NSIRD_screencaptureui_mWBK25/**)",
+      "Read(/Users/kikuchikenji/Library/Application Support/CleanShot/media/media_vH4d4efxnt/**)",
+      "Read(/var/folders/qx/6_t416w11yv492lx56z4lzr00000gn/T/TemporaryItems/NSIRD_screencaptureui_OtJyQd/**)",
+      "Read(/var/folders/qx/6_t416w11yv492lx56z4lzr00000gn/T/TemporaryItems/NSIRD_screencaptureui_WJ9Sse/**)",
+      "Read(/Users/kikuchikenji/Library/Application Support/CleanShot/media/media_ZNkGD9q47d/**)",
+      "Read(/Users/kikuchikenji/Library/Application Support/CleanShot/media/media_KEYemxCobK/**)",
+      "Read(/var/folders/qx/6_t416w11yv492lx56z4lzr00000gn/T/TemporaryItems/NSIRD_screencaptureui_Gfj4nH/**)",
+      "Read(/Users/kikuchikenji/Library/Application Support/CleanShot/media/media_FWQvu24Mwk/**)",
+      "Read(/var/folders/qx/6_t416w11yv492lx56z4lzr00000gn/T/TemporaryItems/NSIRD_screencaptureui_yq8Cp8/**)",
+      "Bash(git checkout:*)",
+      "Bash(npx similarity-ts:*)"
     ],
     "deny": [],
     "ask": []

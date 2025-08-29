@@ -1326,7 +1326,168 @@ body {
 .week-grid {
   display: grid;
   grid-template-columns: 120px repeat(5, 1fr);
-  grid-template-rows: 60px repeat(4, 1fr);
+  gap: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.grid-header {
+  display: contents;
+}
+
+.time-header {
+  background: #f7fafc;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.day-header {
+  background: #f7fafc;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+}
+
+.day-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.day-date {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.holiday-marker {
+  display: inline-block;
+  margin-left: 0.25rem;
+}
+
+.event-info {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.25rem;
+  color: #ec4899;
+}
+
+.grid-row {
+  display: contents;
+}
+
+.time-cell {
+  background: #f7fafc;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.period-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.schedule-cell {
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.5rem;
+  min-height: 100px;
+  background: white;
+  position: relative;
+}
+
+.holiday-cell {
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.holiday-text {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.blocked-cell {
+  background: #fef2f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.blocked-text {
+  color: #dc2626;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* Calendar Week Layout */
+.calendar-week {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.week-schedule .week-header,
+.calendar-week .week-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f7fafc;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.calendar-week .week-title {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 0.9rem;
+}
+
+.grid-corner {
+  background: #f7fafc;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.grid-day-header {
+  background: #f7fafc;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.5rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+.grid-day-header.holiday-header {
+  background: #fed7d7;
+}
+
+.grid-day-header.schedule-request-header {
+  background: #fce7f3;
+}
+
+.grid-period-header {
+  background: #f7fafc;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.5rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+.period-time {
+  font-size: 0.75rem;
+  color: #718096;
 }
 
 .time-column-header {
@@ -1591,13 +1752,157 @@ body {
   overflow: hidden;
 }
 
+/* Semester Schedule Section */
+.semester-schedule {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.semester-schedule h3 {
+  margin-bottom: 1rem;
+  color: #1e293b;
+  font-size: 1.25rem;
+}
+
+.instructions-panel {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: #f0f9ff;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.instruction-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #475569;
+  font-size: 0.875rem;
+}
+
+.weeks-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.week-schedule {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+.week-events {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.event-badge {
+  padding: 0.25rem 0.5rem;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
 .calendar-header {
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.header-left h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.header-left p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.semester-title-display {
+  padding: 0.5rem 1rem;
+  background: #f0f9ff;
+  border: 1px solid #3b82f6;
+  border-radius: 6px;
+  color: #1e40af;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.header-right button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-action-secondary {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-action-secondary:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-action-primary {
+  background: #10b981;
+  color: white;
+}
+
+.btn-action-primary:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.group-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
 }
 
 .calendar-title-section {
@@ -1812,24 +2117,47 @@ body {
   background: #f0f9ff;
 }
 
-/* Semester Export */
-.semester-export-container {
-  position: sticky;
-  bottom: 0;
-  background: white;
-  border-top: 2px solid #e5e7eb;
-  padding: 1.5rem;
-  margin: -1.5rem -1.5rem 0 -1.5rem;
+/* Semester Footer */
+.semester-footer {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border-top: 2px solid #e5e7eb;
+  padding: 1.5rem 2rem;
+  margin: 2rem -1.5rem -1.5rem -1.5rem;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+}
+
+.total-classes {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.footer-right {
+  display: flex;
+  align-items: center;
+}
+
+/* Semester Export */
+.semester-export-container {
+  display: flex;
   align-items: center;
   gap: 2rem;
 }
 
 .export-status {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 .status-summary {
@@ -1837,6 +2165,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .status-complete {
@@ -1855,7 +2184,7 @@ body {
 
 .group-status-list {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
@@ -1864,9 +2193,10 @@ body {
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
   font-weight: 500;
+  border: 1px solid #e5e7eb;
 }
 
 .group-status.complete {
@@ -1881,32 +2211,39 @@ body {
 
 .btn-semester-export {
   padding: 0.75rem 2rem;
-  background: #059669;
+  background: #10b981;
   color: white;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-semester-export:hover:not(:disabled) {
-  background: #047857;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.25);
+}
+
+.btn-semester-export:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-semester-export:disabled,
 .btn-semester-export.disabled {
-  background: #9ca3af;
+  background: #d1d5db;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+  opacity: 0.6;
 }
 
 .btn-semester-export.disabled:hover {

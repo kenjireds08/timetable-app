@@ -16,8 +16,12 @@ const SemesterExportButtons = ({ groupStatuses, groupNames }: SemesterExportButt
   const [allComplete, setAllComplete] = useState(false);
 
   useEffect(() => {
-    const allGroupsComplete = Object.values(groupStatuses).every(status => status === 'complete');
-    setAllComplete(allGroupsComplete);
+    if (groupStatuses) {
+      const allGroupsComplete = Object.values(groupStatuses).every(status => status === 'complete');
+      setAllComplete(allGroupsComplete);
+    } else {
+      setAllComplete(false);
+    }
   }, [groupStatuses]);
 
   const handleExportClick = async () => {
@@ -589,45 +593,15 @@ const SemesterExportButtons = ({ groupStatuses, groupNames }: SemesterExportButt
   };
 
   return (
-    <div className="semester-export-container">
-      <div className="export-status">
-        <div className="status-summary">
-          {allComplete ? (
-            <div className="status-complete">
-              <CheckCircle size={20} />
-              <span>すべてのタブが完璧な状態です</span>
-            </div>
-          ) : (
-            <div className="status-incomplete">
-              <AlertCircle size={20} />
-              <span>未完成のタブがあります</span>
-            </div>
-          )}
-        </div>
-        
-        <div className="group-status-list">
-          {Object.keys(groupStatuses).map(groupKey => (
-            <div key={groupKey} className={`group-status ${groupStatuses[groupKey]}`}>
-              {groupStatuses[groupKey] === 'complete' ? (
-                <CheckCircle size={16} />
-              ) : (
-                <AlertCircle size={16} />
-              )}
-              <span>{groupNames[groupKey] || groupKey}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <button
-        className={`btn-semester-export ${!allComplete ? 'disabled' : ''}`}
-        onClick={handleExportClick}
-        disabled={isExporting || !allComplete}
-      >
-        <FileSpreadsheet size={20} />
-        {isExporting ? '書き出し中...' : '半年分時間割をExcel出力'}
-      </button>
-    </div>
+    <button
+      className={`btn-semester-export ${!allComplete ? 'disabled' : ''}`}
+      onClick={handleExportClick}
+      disabled={isExporting || !allComplete}
+      title={!allComplete ? '未完成のタブがあります' : 'クリックしてExcelファイルを出力'}
+    >
+      <FileSpreadsheet size={20} />
+      {isExporting ? '書き出し中...' : '半年分時間割をExcel出力'}
+    </button>
   );
 };
 
