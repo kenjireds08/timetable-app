@@ -371,7 +371,6 @@ export class AutoScheduleGenerator {
         }
         
         const totalSessions = subject.totalClasses || 16;
-        const weeklyDistribution = this.calculateWeeklyDistribution(totalSessions, weeks, 2);
         let placedSessions = 0;
         
         // コンビ授業の相手科目を取得
@@ -387,20 +386,30 @@ export class AutoScheduleGenerator {
         console.log(`\n🎯 ${subject.name}の${grade}コンビ授業配置開始 (${totalSessions}コマ)`);
         console.log(`🤝 コンビペア: ${subject.name} ↔ ${comboSubject.name}`);
         
+        // 1/22（第17週木曜日）を含めて配置する週を特定
+        const targetWeeks = [
+          1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+        ];
+        
         // 配置処理
-        for (let week = 1; week <= weeks && placedSessions < totalSessions; week++) {
-          const targetSessionsThisWeek = weeklyDistribution[week - 1] || 0;
-          if (targetSessionsThisWeek === 0) continue;
+        for (const week of targetWeeks) {
+          if (placedSessions >= totalSessions) break;
+          if (week > weeks) break;
           
-          let weeklyPlaced = 0;
-          const availableDays = ['火', '水', '木', '金', '月'];
+          // 各週で木曜日を優先的に使用
+          const preferredDays = week === 17 ? ['木'] : ['木', '火', '水', '金', '月'];
           const periods = ['1限', '2限', '3限', '4限'];
           
-          for (const day of availableDays) {
-            if (weeklyPlaced >= targetSessionsThisWeek) break;
+          let weeklyPlaced = 0;
+          const maxPerWeek = week === 17 ? 1 : 1; // 1/22は確実に1コマ配置
+          
+          for (const day of preferredDays) {
+            if (weeklyPlaced >= maxPerWeek) break;
+            if (placedSessions >= totalSessions) break;
             
             for (const period of periods) {
-              if (weeklyPlaced >= targetSessionsThisWeek) break;
+              if (weeklyPlaced >= maxPerWeek) break;
+              if (placedSessions >= totalSessions) break;
               
               // 固定スケジュールとの競合チェック
               const fixedTeachers = PriorityScheduler.getFixedScheduleTeachers(this.teachers);
@@ -418,12 +427,18 @@ export class AutoScheduleGenerator {
               );
               
               if (success) {
-                console.log(`✅ ${grade}コンビ授業配置成功: ${subject.name} & ${comboSubject.name} 第${week}週${day}曜${period}`);
+                const date = this.calculateDate(options.startDate, week, day);
+                console.log(`✅ ${grade}コンビ授業配置成功: ${subject.name} & ${comboSubject.name} 第${week}週${day}曜${period} (${date})`);
                 processedComboSubjects.add(subject.id);
                 processedComboSubjects.add(comboSubject.id);
                 
                 weeklyPlaced++;
                 placedSessions++;
+                
+                // 1/22に配置できたか確認
+                if (week === 17 && day === '木') {
+                  console.log(`🎯 1/22(木)にコンビ授業を配置しました！`);
+                }
               }
             }
           }
