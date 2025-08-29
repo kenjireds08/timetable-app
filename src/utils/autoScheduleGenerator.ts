@@ -133,13 +133,14 @@ export class AutoScheduleGenerator {
       if (!tp.fixedSchedule) continue;
       
       console.log(`\n📌 ${tp.teacher.name}の固定スケジュール配置`);
+      console.log(`  配置予定: ${tp.fixedSchedule.length}コマ`);
       
       for (const fixed of tp.fixedSchedule) {
         // 該当科目を探す
         const subject = this.subjects.find(s => 
           s.teacherIds.includes(tp.teacher.id) && 
-          (s.name.includes('クリエイティブ') || s.name.includes('デザイン') || s.name.includes('プレゼン') || 
-           s.name.includes('次世代'))
+          (s.name.includes('デザイン') || s.name.includes('プレゼン') || 
+           s.name.includes('次世代') || s.name.includes('キャリア'))
         );
         
         if (!subject) {
@@ -147,59 +148,70 @@ export class AutoScheduleGenerator {
           continue;
         }
         
-        // 教室を確保（たかねこホールなど大教室優先）
-        const classroom = this.classrooms.find(c => c.name === 'たかねこ') || 
-                         this.classrooms.find(c => c.capacity && c.capacity >= 60) ||
-                         this.classrooms[0];
+        // 教室を確保
+        let classroom;
+        if (subject.name.includes('デザイン')) {
+          // デザインとプレゼンテーションは通常教室
+          classroom = this.classrooms.find(c => 
+            c.name === 'ICT1' || c.name === 'ICT2' || c.name === 'しらかわ'
+          ) || this.classrooms[0];
+        } else {
+          // その他は大教室優先
+          classroom = this.classrooms.find(c => c.name === 'たかねこ') || 
+                     this.classrooms.find(c => c.capacity && c.capacity >= 60) ||
+                     this.classrooms[0];
+        }
         
         if (!classroom) {
           console.warn(`⚠️ 教室が見つかりません`);
           continue;
         }
         
-        // 時限の処理（複数時限の場合）
-        const periods = fixed.period ? 
-          fixed.period.split(',').map(p => `${p.trim()}限`) : 
-          ['3限', '4限']; // デフォルトは3-4限
-        
-        for (const period of periods) {
-          // 全グループまたは特定グループに配置
-          const targetGroups = subject.grade === '全学年' ? groups : 
-                              groups.filter(g => g.grade === subject.grade);
-          
-          for (const group of targetGroups) {
-            const entry: GeneratedEntry = {
-              id: `${group.id}-${subject.id}-${fixed.week}-${fixed.dayOfWeek}-${period}`,
-              timeSlot: {
-                week: fixed.week,
-                date: fixed.date,
-                dayOfWeek: fixed.dayOfWeek,
-                period
-              },
-              subjectId: subject.id,
-              subjectName: `${subject.name} [固定]`,
-              teacherId: tp.teacher.id,
-              teacherName: tp.teacher.name,
-              classroomId: classroom.id,
-              classroomName: classroom.name
-            };
-            
-            const currentSchedule = schedule.get(group.id) || [];
-            currentSchedule.push(entry);
-            schedule.set(group.id, currentSchedule);
-            
-            // スロットを使用中にマーク
-            const slotKey = `${group.id}-${fixed.week}-${fixed.dayOfWeek}-${period}`;
-            this.usedSlots.add(slotKey);
-          }
-          
-          // 教師・教室スケジュールに追加
-          this.addToTeacherSchedule(tp.teacher.id, fixed.week, fixed.dayOfWeek, period);
-          this.addToClassroomSchedule(classroom.id, fixed.week, fixed.dayOfWeek, period);
-          
-          console.log(`✅ ${fixed.date} ${fixed.dayOfWeek}曜 ${period}: ${fixed.subject}`);
+        // 対象グループの決定
+        let targetGroups;
+        if (subject.name.includes('デザイン')) {
+          // デザインとプレゼンテーションは1年生のIT・TD両方
+          targetGroups = groups.filter(g => g.grade === '1年');
+        } else if (subject.grade === '全学年') {
+          targetGroups = groups;
+        } else {
+          targetGroups = groups.filter(g => g.grade === subject.grade);
         }
+        
+        for (const group of targetGroups) {
+          const entry: GeneratedEntry = {
+            id: `${group.id}-${subject.id}-${fixed.week}-${fixed.dayOfWeek}-${fixed.period}`,
+            timeSlot: {
+              week: fixed.week,
+              date: fixed.date,
+              dayOfWeek: fixed.dayOfWeek,
+              period: fixed.period
+            },
+            subjectId: subject.id,
+            subjectName: `${subject.name} [固定]`,
+            teacherId: tp.teacher.id,
+            teacherName: tp.teacher.name,
+            classroomId: classroom.id,
+            classroomName: classroom.name
+          };
+          
+          const currentSchedule = schedule.get(group.id) || [];
+          currentSchedule.push(entry);
+          schedule.set(group.id, currentSchedule);
+          
+          // スロットを使用中にマーク
+          const slotKey = `${group.id}-${fixed.week}-${fixed.dayOfWeek}-${fixed.period}`;
+          this.usedSlots.add(slotKey);
+        }
+        
+        // 教師・教室スケジュールに追加
+        this.addToTeacherSchedule(tp.teacher.id, fixed.week, fixed.dayOfWeek, fixed.period);
+        this.addToClassroomSchedule(classroom.id, fixed.week, fixed.dayOfWeek, fixed.period);
+        
+        console.log(`✅ ${fixed.date} ${fixed.dayOfWeek}曜 ${fixed.period}: ${fixed.subject}`);
       }
+      
+      console.log(`  完了: ${tp.teacher.name}の${tp.fixedSchedule.length}コマ配置完了`);
     }
   }
 

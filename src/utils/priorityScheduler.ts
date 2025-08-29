@@ -39,36 +39,88 @@ export class PriorityScheduler {
       }
 
       // 確定スケジュールがある場合
-      if (teacher.constraints?.confirmed && Array.isArray(teacher.constraints.confirmed)) {
+      if (teacher.constraints?.fixed && Array.isArray(teacher.constraints.fixed)) {
         priority += 500;
         
-        // 鈴木先生の詳細スケジュールをパース
-        if (teacher.name === '鈴木 俊良') {
-          fixedSchedule.push(
-            { week: 3, date: '2025-10-15', dayOfWeek: '水', subject: 'オリエンテーション' },
-            { week: 4, date: '2025-10-22', dayOfWeek: '水', subject: 'プレゼンテーションの構成と目的' },
-            { week: 5, date: '2025-10-29', dayOfWeek: '水', subject: 'デザインの基礎知識' },
-            { week: 7, date: '2025-11-05', dayOfWeek: '水', subject: 'プレゼン実践①レクチャーと準備' },
-            { week: 8, date: '2025-11-12', dayOfWeek: '水', subject: 'プレゼン実践①発表' },
-            { week: 9, date: '2025-11-19', dayOfWeek: '水', subject: 'プレゼン実践①発表' },
-            { week: 10, date: '2025-11-26', dayOfWeek: '水', subject: 'プレゼン実践②レクチャーと準備' },
-            { week: 11, date: '2025-12-03', dayOfWeek: '水', subject: 'プレゼン実践②発表' },
-            { week: 12, date: '2025-12-10', dayOfWeek: '水', subject: 'プレゼン実践②発表' },
-            { week: 13, date: '2025-12-17', dayOfWeek: '水', subject: 'プレゼン実践③オンライン' },
-            { week: 14, date: '2025-12-24', dayOfWeek: '水', subject: 'プレゼン実践③オンラインでのプレゼン・フィードバック' },
-            { week: 16, date: '2026-01-07', dayOfWeek: '水', subject: 'ここまでのおさらい・成果発表会に向けた導入とレクチャー' },
-            { week: 17, date: '2026-01-14', dayOfWeek: '水', subject: '成果発表会プレゼン準備' },
-            { week: 18, date: '2026-01-19', dayOfWeek: '月', period: '3限,4限', subject: '成果発表会プレゼン' },
-            { week: 18, date: '2026-01-19', dayOfWeek: '月', subject: '成果発表会プレゼンテーション' },
-            { week: 18, date: '2026-01-21', dayOfWeek: '水', subject: 'ふりかえり' }
-          );
+        // 鈴木先生のデザインとプレゼンテーション16コマ
+        if (teacher.name === '鈴木俊良') {
+          // 単独授業（1コマずつ）- 13コマ
+          const singleLessons = [
+            { week: 3, date: '2025-10-15', dayOfWeek: '水', period: '3限' },
+            { week: 4, date: '2025-10-22', dayOfWeek: '水', period: '3限' },
+            { week: 5, date: '2025-10-29', dayOfWeek: '水', period: '3限' },
+            { week: 7, date: '2025-11-05', dayOfWeek: '水', period: '3限' },
+            { week: 8, date: '2025-11-12', dayOfWeek: '水', period: '3限' },
+            { week: 9, date: '2025-11-19', dayOfWeek: '水', period: '3限' },
+            { week: 10, date: '2025-11-26', dayOfWeek: '水', period: '3限' },
+            { week: 11, date: '2025-12-03', dayOfWeek: '水', period: '3限' },
+            { week: 12, date: '2025-12-10', dayOfWeek: '水', period: '3限' },
+            { week: 13, date: '2025-12-17', dayOfWeek: '水', period: '3限' },
+            { week: 14, date: '2025-12-24', dayOfWeek: '水', period: '3限' },
+            { week: 16, date: '2026-01-07', dayOfWeek: '水', period: '3限' },
+            { week: 17, date: '2026-01-14', dayOfWeek: '水', period: '3限' },
+          ];
+          
+          // 連続授業（14-15コマ目）- 1/19(月)の3限と4限
+          const continuousLessons = [
+            { week: 18, date: '2026-01-19', dayOfWeek: '月', period: '3限' },
+            { week: 18, date: '2026-01-19', dayOfWeek: '月', period: '4限' },
+          ];
+          
+          // 最後の単独授業（16コマ目）
+          const lastLesson = [
+            { week: 18, date: '2026-01-21', dayOfWeek: '水', period: '3限' },
+          ];
+          
+          // すべてを結合
+          [...singleLessons, ...continuousLessons, ...lastLesson].forEach(lesson => {
+            fixedSchedule.push({
+              ...lesson,
+              subject: 'デザインとプレゼンテーション'
+            });
+          });
         }
         
         // 井手先生の固定スケジュール
-        if (teacher.name === '井手 修身') {
-          fixedSchedule.push(
-            { week: 9, date: '2025-11-28', dayOfWeek: '金', period: '3', subject: '次世代地域リーダー学' }
-          );
+        if (teacher.name === '井手修身') {
+          const fixedData = teacher.constraints.fixed;
+          fixedData.forEach((fixed: any) => {
+            const dateObj = new Date(fixed.date);
+            const startDate = new Date('2025-10-06');
+            const weekNum = Math.floor((dateObj.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+            
+            fixed.periods.forEach((period: string) => {
+              fixedSchedule.push({
+                week: weekNum,
+                date: fixed.date,
+                dayOfWeek: fixed.dayOfWeek,
+                period: period,
+                subject: '次世代地域リーダー学'
+              });
+            });
+          });
+        }
+        
+        // 田上先生の固定スケジュール
+        if (teacher.name === '田上寛美') {
+          const fixedData = teacher.constraints.fixed;
+          fixedData.forEach((fixed: any) => {
+            if (fixed.date) {
+              const dateObj = new Date(fixed.date);
+              const startDate = new Date('2025-10-06');
+              const weekNum = Math.floor((dateObj.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+              
+              fixed.periods.forEach((period: string) => {
+                fixedSchedule.push({
+                  week: weekNum,
+                  date: fixed.date,
+                  dayOfWeek: fixed.dayOfWeek,
+                  period: period,
+                  subject: 'キャリア実践I'
+                });
+              });
+            }
+          });
         }
       }
 
