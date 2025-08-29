@@ -350,17 +350,17 @@ export class AutoScheduleGenerator {
     const processedComboSubjects = new Set<string>();
     
     for (const [grade, gradeGroupList] of Object.entries(gradeGroups)) {
-      console.log(`\n📚 ${grade}共通科目の合同授業配置開始`);
+      console.log(`\n📚 ${grade}コンビ授業の配置開始`);
       
-      const commonSubjects = this.subjects.filter(subject =>
+      // コンビ授業のみをフィルタリング
+      const comboSubjects = this.subjects.filter(subject =>
         subject.department === '共通' && 
-        (subject.grade === grade || subject.grade === '全学年' || subject.grade === '全学年（合同）') &&
-        subject.lessonType !== '合同'
+        subject.grade === grade &&
+        subject.lessonType === 'コンビ授業' &&
+        !processedComboSubjects.has(subject.id)
       );
       
-      for (const subject of commonSubjects) {
-        if (subject.grade === '全学年' || subject.grade === '全学年（合同）') continue; // 合同授業は既に処理済み
-        
+      for (const subject of comboSubjects) {
         // 固定スケジュール教師の科目はスキップ
         if (subject.teacherIds.some(tid => {
           const teacher = this.teachers.find(t => t.id === tid);
@@ -370,29 +370,24 @@ export class AutoScheduleGenerator {
           continue;
         }
         
-        // コンビ授業の場合、既に処理済みならスキップ
-        if (subject.lessonType === 'コンビ授業' && processedComboSubjects.has(subject.id)) {
-          console.log(`⏩ ${subject.name}は既にコンビで処理済み`);
-          continue;
-        }
-        
         const totalSessions = subject.totalClasses || 16;
         const weeklyDistribution = this.calculateWeeklyDistribution(totalSessions, weeks, 2);
         let placedSessions = 0;
         
         // コンビ授業の相手科目を取得
-        const comboSubject = subject.lessonType === 'コンビ授業' && subject.comboSubjectId 
+        const comboSubject = subject.comboSubjectId 
           ? this.subjects.find(s => s.id === subject.comboSubjectId)
           : null;
         
-        if (comboSubject) {
-          console.log(`\n🎯 ${subject.name}の${grade}コンビ授業配置開始 (${totalSessions}コマ)`);
-          console.log(`🤝 コンビペア: ${subject.name} ↔ ${comboSubject.name}`);
-        } else {
-          console.log(`\n🎯 ${subject.name}の${grade}合同授業配置開始 (${totalSessions}コマ)`);
+        if (!comboSubject) {
+          console.warn(`⚠️ ${subject.name}のコンビ相手が見つかりません`);
+          continue;
         }
         
-        // 配置処理（全学年合同と同様だが対象グループが異なる）
+        console.log(`\n🎯 ${subject.name}の${grade}コンビ授業配置開始 (${totalSessions}コマ)`);
+        console.log(`🤝 コンビペア: ${subject.name} ↔ ${comboSubject.name}`);
+        
+        // 配置処理
         for (let week = 1; week <= weeks && placedSessions < totalSessions; week++) {
           const targetSessionsThisWeek = weeklyDistribution[week - 1] || 0;
           if (targetSessionsThisWeek === 0) continue;
@@ -417,62 +412,18 @@ export class AutoScheduleGenerator {
               const canPlaceAll = this.canPlaceForSpecificGroups(gradeGroupList, week, day, period, options.startDate);
               if (!canPlaceAll) continue;
               
-              if (comboSubject) {
-                // コンビ授業の処理
-                const success = this.placeComboClassForGroups(
-                  gradeGroupList, subject, comboSubject, week, day, period, options.startDate, schedule
-                );
-                
-                if (success) {
-                  console.log(`✅ ${grade}コンビ授業配置成功: ${subject.name} & ${comboSubject.name} 第${week}週${day}曜${period}`);
-                  processedComboSubjects.add(subject.id);
-                  processedComboSubjects.add(comboSubject.id);
-                  
-                  weeklyPlaced++;
-                  placedSessions++;
-                } else {
-                  continue;
-                }
-              } else {
-                // 通常の共通科目処理
-                const teacher = this.getAvailableTeacher(subject, week, day, period);
-                if (!teacher) continue;
-                
-                const classroom = this.getAvailableClassroom(subject, week, day, period);
-                if (!classroom) continue;
-                
-                // 同学年グループに同じ教室で同時配置（共通授業）
-                for (const group of gradeGroupList) {
-                  const entry: GeneratedEntry = {
-                    id: `${group.id}-${subject.id}-${week}-${day}-${period}`,
-                    timeSlot: {
-                      week,
-                      date: this.calculateDate(options.startDate, week, day),
-                      dayOfWeek: day,
-                      period
-                    },
-                    subjectId: subject.id,
-                    subjectName: `${subject.name} [共通]`,
-                    teacherId: teacher.id,
-                    teacherName: teacher.name,
-                    classroomId: classroom.id, // 同じ教室で合同授業
-                    classroomName: classroom.name
-                  };
-                  
-                  const currentSchedule = schedule.get(group.id) || [];
-                  currentSchedule.push(entry);
-                  schedule.set(group.id, currentSchedule);
-                }
-                
-                // スロットを使用中にマーク
-                this.markSlotUsedForSpecificGroups(gradeGroupList, week, day, period);
-                this.addToTeacherSchedule(teacher.id, week, day, period);
-                this.addToClassroomSchedule(classroom.id, week, day, period);
+              // コンビ授業の処理
+              const success = this.placeComboClassForGroups(
+                gradeGroupList, subject, comboSubject, week, day, period, options.startDate, schedule
+              );
+              
+              if (success) {
+                console.log(`✅ ${grade}コンビ授業配置成功: ${subject.name} & ${comboSubject.name} 第${week}週${day}曜${period}`);
+                processedComboSubjects.add(subject.id);
+                processedComboSubjects.add(comboSubject.id);
                 
                 weeklyPlaced++;
                 placedSessions++;
-                
-                console.log(`✅ ${subject.name} 第${week}週${day}曜${period}に${grade}合同配置成功`);
               }
             }
           }

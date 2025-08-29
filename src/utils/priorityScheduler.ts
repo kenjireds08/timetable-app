@@ -47,9 +47,9 @@ export class PriorityScheduler {
           // 正しい週番号での配置（開始日を9/29として計算）
           const schedules = [
             { week: 3, date: '2025-10-15', dayOfWeek: '水', period: '3限' },
-            { week: 4, date: '2025-10-22', dayOfWeek: '水', period: '3限' },
+            { week: 4, date: '2025-10-22', dayOfWeek: '水', period: '2限' },  // 田上先生の3,4限を避けて2限に
             { week: 5, date: '2025-10-29', dayOfWeek: '水', period: '3限' },
-            { week: 6, date: '2025-11-05', dayOfWeek: '水', period: '3限' },  // 11/5を追加
+            { week: 6, date: '2025-11-05', dayOfWeek: '水', period: '3限' },
             { week: 7, date: '2025-11-12', dayOfWeek: '水', period: '3限' },
             { week: 8, date: '2025-11-19', dayOfWeek: '水', period: '3限' },
             { week: 9, date: '2025-11-26', dayOfWeek: '水', period: '3限' },
@@ -57,7 +57,7 @@ export class PriorityScheduler {
             { week: 11, date: '2025-12-10', dayOfWeek: '水', period: '3限' },
             { week: 12, date: '2025-12-17', dayOfWeek: '水', period: '3限' },
             { week: 13, date: '2025-12-24', dayOfWeek: '水', period: '3限' },
-            { week: 15, date: '2026-01-07', dayOfWeek: '水', period: '3限' },  // 1/7を追加
+            { week: 15, date: '2026-01-07', dayOfWeek: '水', period: '3限' },
             { week: 16, date: '2026-01-14', dayOfWeek: '水', period: '3限' },
             // 1/19(月)の連続授業
             { week: 17, date: '2026-01-19', dayOfWeek: '月', period: '3限' },
@@ -74,47 +74,15 @@ export class PriorityScheduler {
           });
         }
         
-        // 井手先生の固定スケジュール
-        if (teacher.name === '井手修身') {
-          const fixedData = teacher.constraints.fixed;
-          fixedData.forEach((fixed: any) => {
-            const dateObj = new Date(fixed.date);
-            const startDate = new Date('2025-09-29');
-            const weekNum = Math.floor((dateObj.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
-            
-            fixed.periods.forEach((period: string) => {
-              fixedSchedule.push({
-                week: weekNum,
-                date: fixed.date,
-                dayOfWeek: fixed.dayOfWeek,
-                period: period,
-                subject: '次世代地域リーダー学'
-              });
-            });
-          });
+        // 田上先生のキャリア実践I - 10/22(水)3,4限
+        if (teacher.name === '田上寛美') {
+          fixedSchedule.push(
+            { week: 4, date: '2025-10-22', dayOfWeek: '水', period: '3限', subject: 'キャリア実践I' },
+            { week: 4, date: '2025-10-22', dayOfWeek: '水', period: '4限', subject: 'キャリア実践I' }
+          );
         }
         
-        // 田上先生の固定スケジュール
-        if (teacher.name === '田上寛美') {
-          const fixedData = teacher.constraints.fixed;
-          fixedData.forEach((fixed: any) => {
-            if (fixed.date) {
-              const dateObj = new Date(fixed.date);
-              const startDate = new Date('2025-09-29');
-              const weekNum = Math.floor((dateObj.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
-              
-              fixed.periods.forEach((period: string) => {
-                fixedSchedule.push({
-                  week: weekNum,
-                  date: fixed.date,
-                  dayOfWeek: fixed.dayOfWeek,
-                  period: period,
-                  subject: 'キャリア実践I'
-                });
-              });
-            }
-          });
-        }
+        // 井手先生の次世代地域リーダー学は後で実装
       }
 
       // フィオーナ先生の特殊制約
