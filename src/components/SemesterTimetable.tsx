@@ -87,9 +87,22 @@ const DraggableEntry = ({
   );
   
   // 授業タイプの判定（優先順位: コンビ > 合同 > 共通 > 専門）
-  const isComboClass = entry.subjectName.includes('[コンビ]') || matchingSubject?.lessonType === 'コンビ授業';
+  const isComboClass = entry.subjectName.includes('[コンビ]') || entry.subjectName.includes('[コンビA]') || entry.subjectName.includes('[コンビB]') || matchingSubject?.lessonType === 'コンビ授業';
   const isComboA = entry.subjectName.includes('[コンビA]') || matchingSubject?.comboRole === 'A';
   const isComboB = entry.subjectName.includes('[コンビB]') || matchingSubject?.comboRole === 'B';
+  
+  // デバッグ用
+  if (entry.subjectName.includes('English') || entry.subjectName.includes('日本語')) {
+    console.log('コンビ授業判定:', {
+      name: entry.subjectName,
+      isComboClass,
+      isComboA,
+      isComboB,
+      matchingSubject: matchingSubject?.name,
+      lessonType: matchingSubject?.lessonType,
+      comboRole: matchingSubject?.comboRole
+    });
+  }
   const isJointClass = !isComboClass && matchingSubject?.department === '共通' && (matchingSubject?.grade === '全学年' || matchingSubject?.grade === '全学年（合同）');
   const isCommonSubject = !isComboClass && !isJointClass && matchingSubject?.department === '共通';
   const isSpecializedSubject = !isComboClass && !isJointClass && !isCommonSubject && matchingSubject?.department !== '共通';
