@@ -44,36 +44,29 @@ export class PriorityScheduler {
         
         // 鈴木先生のデザインとプレゼンテーション16コマ
         if (teacher.name === '鈴木俊良') {
-          // 単独授業（1コマずつ）- 13コマ
-          const singleLessons = [
+          // 正しい週番号での配置（開始日を9/29として計算）
+          const schedules = [
             { week: 3, date: '2025-10-15', dayOfWeek: '水', period: '3限' },
             { week: 4, date: '2025-10-22', dayOfWeek: '水', period: '3限' },
             { week: 5, date: '2025-10-29', dayOfWeek: '水', period: '3限' },
-            { week: 7, date: '2025-11-05', dayOfWeek: '水', period: '3限' },
-            { week: 8, date: '2025-11-12', dayOfWeek: '水', period: '3限' },
-            { week: 9, date: '2025-11-19', dayOfWeek: '水', period: '3限' },
-            { week: 10, date: '2025-11-26', dayOfWeek: '水', period: '3限' },
-            { week: 11, date: '2025-12-03', dayOfWeek: '水', period: '3限' },
-            { week: 12, date: '2025-12-10', dayOfWeek: '水', period: '3限' },
-            { week: 13, date: '2025-12-17', dayOfWeek: '水', period: '3限' },
-            { week: 14, date: '2025-12-24', dayOfWeek: '水', period: '3限' },
-            { week: 16, date: '2026-01-07', dayOfWeek: '水', period: '3限' },
-            { week: 17, date: '2026-01-14', dayOfWeek: '水', period: '3限' },
+            { week: 6, date: '2025-11-05', dayOfWeek: '水', period: '3限' },  // 11/5を追加
+            { week: 7, date: '2025-11-12', dayOfWeek: '水', period: '3限' },
+            { week: 8, date: '2025-11-19', dayOfWeek: '水', period: '3限' },
+            { week: 9, date: '2025-11-26', dayOfWeek: '水', period: '3限' },
+            { week: 10, date: '2025-12-03', dayOfWeek: '水', period: '3限' },
+            { week: 11, date: '2025-12-10', dayOfWeek: '水', period: '3限' },
+            { week: 12, date: '2025-12-17', dayOfWeek: '水', period: '3限' },
+            { week: 13, date: '2025-12-24', dayOfWeek: '水', period: '3限' },
+            { week: 15, date: '2026-01-07', dayOfWeek: '水', period: '3限' },  // 1/7を追加
+            { week: 16, date: '2026-01-14', dayOfWeek: '水', period: '3限' },
+            // 1/19(月)の連続授業
+            { week: 17, date: '2026-01-19', dayOfWeek: '月', period: '3限' },
+            { week: 17, date: '2026-01-19', dayOfWeek: '月', period: '4限' },
+            // 1/21(水)の最終授業
+            { week: 17, date: '2026-01-21', dayOfWeek: '水', period: '3限' },
           ];
           
-          // 連続授業（14-15コマ目）- 1/19(月)の3限と4限
-          const continuousLessons = [
-            { week: 18, date: '2026-01-19', dayOfWeek: '月', period: '3限' },
-            { week: 18, date: '2026-01-19', dayOfWeek: '月', period: '4限' },
-          ];
-          
-          // 最後の単独授業（16コマ目）
-          const lastLesson = [
-            { week: 18, date: '2026-01-21', dayOfWeek: '水', period: '3限' },
-          ];
-          
-          // すべてを結合
-          [...singleLessons, ...continuousLessons, ...lastLesson].forEach(lesson => {
+          schedules.forEach(lesson => {
             fixedSchedule.push({
               ...lesson,
               subject: 'デザインとプレゼンテーション'
@@ -86,7 +79,7 @@ export class PriorityScheduler {
           const fixedData = teacher.constraints.fixed;
           fixedData.forEach((fixed: any) => {
             const dateObj = new Date(fixed.date);
-            const startDate = new Date('2025-10-06');
+            const startDate = new Date('2025-09-29');
             const weekNum = Math.floor((dateObj.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
             
             fixed.periods.forEach((period: string) => {
@@ -107,7 +100,7 @@ export class PriorityScheduler {
           fixedData.forEach((fixed: any) => {
             if (fixed.date) {
               const dateObj = new Date(fixed.date);
-              const startDate = new Date('2025-10-06');
+              const startDate = new Date('2025-09-29');
               const weekNum = Math.floor((dateObj.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
               
               fixed.periods.forEach((period: string) => {

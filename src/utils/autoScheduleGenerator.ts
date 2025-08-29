@@ -63,7 +63,7 @@ export class AutoScheduleGenerator {
     this.teacherSchedule = new Map();
     this.classroomSchedule = new Map();
     this.usedSlots = new Set(); // 全グループ共通のスロット管理
-    console.log('🏁 時間割生成開始 - 優先度ベース版');
+    console.log('🏁 時間割生成開始 - 段階的実装版');
     
     // 教師を制約の厳しさでソート
     const sortedTeachers = PriorityScheduler.sortTeachersByPriority(this.teachers);
@@ -94,27 +94,27 @@ export class AutoScheduleGenerator {
       schedule.set(group.id, []);
     }
 
-    // Phase 0: 固定スケジュールの事前配置（鈴木先生など）
+    // Phase 0: 固定スケジュールの事前配置（鈴木先生のデザインとプレゼンテーション）
     console.log('\n🎯 Phase 0: 固定スケジュール教師の事前配置');
     this.placeFixedSchedules(fixedTeachers, groups, options, schedule);
 
-    // Phase 1: 全学年（合同）科目の配置
-    console.log('\n🎯 Phase 1: 全学年（合同）科目の配置開始');
-    this.placeJointSubjectsForAllGrades(groups, weeks, options, schedule);
+    // Phase 1: 全学年（合同）科目の配置 - 今回はスキップ
+    // console.log('\n🎯 Phase 1: 全学年（合同）科目の配置開始');
+    // this.placeJointSubjectsForAllGrades(groups, weeks, options, schedule);
     
-    // Phase 2: 共通科目の同学年間での同時配置
-    console.log('\n🎯 Phase 2: 共通科目の同学年合同授業配置開始');
+    // Phase 2: 共通科目の同学年間での同時配置（コンビ授業のみ）
+    console.log('\n🎯 Phase 2: コンビ授業の配置開始');
     this.placeCommonSubjectsSynchronized(groups, weeks, options, schedule);
     
-    // Phase 3: 各グループの専門科目配置
-    console.log('\n🎯 Phase 3: 専門科目の個別配置開始');
-    for (const group of groups) {
-      console.log(`\n📚 ${group.name}の専門科目配置開始`);
-      const currentSchedule = schedule.get(group.id) || [];
-      const updatedSchedule = this.generateGroupScheduleSpecialized(group, weeks, options, currentSchedule);
-      schedule.set(group.id, updatedSchedule);
-      console.log(`✅ ${group.name}完了: ${updatedSchedule.length}コマ配置`);
-    }
+    // Phase 3: 各グループの専門科目配置 - 今回はスキップ
+    // console.log('\n🎯 Phase 3: 専門科目の個別配置開始');
+    // for (const group of groups) {
+    //   console.log(`\n📚 ${group.name}の専門科目配置開始`);
+    //   const currentSchedule = schedule.get(group.id) || [];
+    //   const updatedSchedule = this.generateGroupScheduleSpecialized(group, weeks, options, currentSchedule);
+    //   schedule.set(group.id, updatedSchedule);
+    //   console.log(`✅ ${group.name}完了: ${updatedSchedule.length}コマ配置`);
+    // }
 
     return schedule;
   }
@@ -136,6 +136,21 @@ export class AutoScheduleGenerator {
       console.log(`  配置予定: ${tp.fixedSchedule.length}コマ`);
       
       for (const fixed of tp.fixedSchedule) {
+        // 休日チェック
+        if (this.isHoliday(fixed.date)) {
+          console.warn(`⚠️ ${fixed.date}は休日のためスキップ`);
+          continue;
+        }
+        
+        // 成果発表会期間チェック（1/26-1/28）
+        const fixedDate = new Date(fixed.date);
+        const presentationStart = new Date('2026-01-26');
+        const presentationEnd = new Date('2026-01-28');
+        if (fixedDate >= presentationStart && fixedDate <= presentationEnd) {
+          console.warn(`⚠️ ${fixed.date}は成果発表会期間のためスキップ`);
+          continue;
+        }
+        
         // 該当科目を探す
         const subject = this.subjects.find(s => 
           s.teacherIds.includes(tp.teacher.id) && 
@@ -211,7 +226,7 @@ export class AutoScheduleGenerator {
         console.log(`✅ ${fixed.date} ${fixed.dayOfWeek}曜 ${fixed.period}: ${fixed.subject}`);
       }
       
-      console.log(`  完了: ${tp.teacher.name}の${tp.fixedSchedule.length}コマ配置完了`);
+      console.log(`  完了: ${tp.teacher.name}の固定スケジュール配置完了`);
     }
   }
 
