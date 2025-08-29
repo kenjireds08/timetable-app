@@ -464,6 +464,11 @@ function App() {
               startDate={startDate}
               endDate={endDate}
               holidays={holidays}
+              scheduleRequests={scheduleRequests.map(req => ({ 
+                date: req.date, 
+                description: req.description,
+                periods: req.periods 
+              }))}
             />
           )}
 

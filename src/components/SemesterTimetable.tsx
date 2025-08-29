@@ -47,6 +47,7 @@ interface SemesterTimetableProps {
   startDate?: string;
   endDate?: string;
   holidays?: string[];
+  scheduleRequests?: Array<{ date: string; description: string; periods: string[]; }>;
 }
 
 const DraggableEntry = ({ 
@@ -154,6 +155,7 @@ const DroppableCell = ({
   onDrop, 
   onAdd,
   isHoliday = false,
+  scheduleRequest = null,
   subjects
 }: { 
   week: number;
@@ -164,6 +166,7 @@ const DroppableCell = ({
   onDrop: (entry: SemesterEntry, week: number, day: string, period: string) => void;
   onAdd: (week: number, day: string, period: string) => void;
   isHoliday?: boolean;
+  scheduleRequest?: { date: string; description: string; periods: string[]; } | null;
   subjects: Subject[];
 }) => {
   const [{ isOver, canDrop }, drop] = useDrop({
@@ -178,9 +181,9 @@ const DroppableCell = ({
       canDrop: monitor.canDrop(),
     }),
     canDrop: (item) => {
-      console.log('❓ ドロップ可能チェック:', item?.entry?.subjectName, `→ ${day}曜日${period}`, isHoliday ? '(休日)' : '');
-      // 休日の場合はドロップ不可
-      if (isHoliday) {
+      console.log('❓ ドロップ可能チェック:', item?.entry?.subjectName, `→ ${day}曜日${period}`, isHoliday ? '(休日)' : '', scheduleRequest ? `(${scheduleRequest.description})` : '');
+      // 休日またはスケジュール調整要求日の場合はドロップ不可
+      if (isHoliday || scheduleRequest) {
         return false;
       }
       // 基本的な事前チェック（完全な検証は onDrop で行う）
@@ -194,16 +197,21 @@ const DroppableCell = ({
   return (
     <div
       ref={drop}
-      className={`semester-cell ${isHoliday ? 'holiday-cell' : ''} ${isOver ? 'drag-over' : ''} ${entries.length > 0 ? 'has-entries' : ''} ${isOver && canDrop ? 'can-drop' : ''} ${isOver && !canDrop ? 'cannot-drop' : ''}`}
+      className={`semester-cell ${isHoliday ? 'holiday-cell' : ''} ${scheduleRequest ? 'schedule-request-cell' : ''} ${isOver ? 'drag-over' : ''} ${entries.length > 0 ? 'has-entries' : ''} ${isOver && canDrop ? 'can-drop' : ''} ${isOver && !canDrop ? 'cannot-drop' : ''}`}
       style={{
         minHeight: '80px',
         backgroundColor: isHoliday 
           ? 'rgba(229, 231, 235, 0.5)' // グレー - 休日
-          : isOver 
-            ? canDrop 
-              ? 'rgba(34, 197, 94, 0.1)' // 緑色 - ドロップ可能
-              : 'rgba(239, 68, 68, 0.1)'  // 赤色 - ドロップ不可
-            : 'transparent'
+          : scheduleRequest
+            ? 'rgba(251, 207, 232, 0.3)' // ピンク - スケジュール調整要求
+            : isOver 
+              ? canDrop 
+                ? 'rgba(34, 197, 94, 0.1)' // 緑色 - ドロップ可能
+                : 'rgba(239, 68, 68, 0.1)'  // 赤色 - ドロップ不可
+              : 'transparent',
+        backgroundImage: scheduleRequest && !isHoliday
+          ? 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(244, 114, 182, 0.1) 10px, rgba(244, 114, 182, 0.1) 20px)'
+          : 'none'
       }}
     >
       {entriesWithProgress.map(({ entry, progressInfo }) => (
@@ -215,7 +223,7 @@ const DroppableCell = ({
           subjects={subjects}
         />
       ))}
-      {entries.length === 0 && !isHoliday && (
+      {entries.length === 0 && !isHoliday && !scheduleRequest && (
         <button 
           className="add-entry-btn"
           onClick={() => onAdd(week, day, period)}
@@ -227,6 +235,11 @@ const DroppableCell = ({
       {isHoliday && entries.length === 0 && (
         <div className="holiday-message">
           休日
+        </div>
+      )}
+      {scheduleRequest && !isHoliday && entries.length === 0 && (
+        <div className="schedule-request-message" style={{ color: '#ec4899', fontSize: '12px', textAlign: 'center' }}>
+          {scheduleRequest.description}
         </div>
       )}
     </div>
@@ -241,7 +254,8 @@ const SemesterTimetable = ({
   semesterTitle = '2025年度 後期',
   startDate = '2025-10-07',
   endDate = '2026-03-20',
-  holidays = []
+  holidays = [],
+  scheduleRequests = []
 }: SemesterTimetableProps) => {
   const [semesterData, setSemesterData] = useState<SemesterData | null>(null);
   const [activeTab, setActiveTab] = useState<string>('it-1');
@@ -598,6 +612,23 @@ const SemesterTimetable = ({
     return holidays.includes(dateString);
   };
 
+  // 日付と時限がスケジュール調整要求（除外日）かどうかチェックするヘルパー関数
+  const isScheduleRequest = (date: Date, period?: string) => {
+    const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const request = scheduleRequests.find(req => req.date === dateString);
+    
+    if (request) {
+      // 時限が指定されている場合は、その時限が除外対象かチェック
+      if (period) {
+        const isPeriodExcluded = request.periods.includes(period);
+        return isPeriodExcluded ? request : null;
+      }
+      // 時限が指定されていない場合は、その日に除外時限があるかチェック（日付ヘッダー用）
+      return request;
+    }
+    return null;
+  };
+
   // 日付計算のヘルパー関数
   const getWeekDates = (weekNumber: number) => {
     const semesterStartDate = new Date(startDate || semesterData?.startDate || '2025-09-29');
@@ -618,10 +649,12 @@ const SemesterTimetable = ({
     return days.map((_, dayIndex) => {
       const date = new Date(weekStartDate);
       date.setDate(weekStartDate.getDate() + dayIndex);
+      const scheduleRequest = isScheduleRequest(date);
       return {
         date: date,
         formatted: `${date.getMonth() + 1}/${date.getDate()}`,
-        isHoliday: isHoliday(date)
+        isHoliday: isHoliday(date),
+        scheduleRequest: scheduleRequest
       };
     });
   };
@@ -791,6 +824,10 @@ const SemesterTimetable = ({
                           
                           const dayIndex = days.indexOf(day);
                           const isHolidayCell = weekDates[dayIndex]?.isHoliday || false;
+                          
+                          // 時限単位でスケジュール調整要求をチェック
+                          const currentDate = weekDates[dayIndex]?.date;
+                          const scheduleRequestCell = currentDate ? isScheduleRequest(currentDate, period.name) : null;
 
                           return (
                             <DroppableCell
@@ -803,6 +840,7 @@ const SemesterTimetable = ({
                               onDrop={handleDrop}
                               onAdd={handleAddEntry}
                               isHoliday={isHolidayCell}
+                              scheduleRequest={scheduleRequestCell}
                               subjects={_subjects}
                             />
                           );
