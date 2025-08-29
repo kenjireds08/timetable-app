@@ -402,10 +402,29 @@ export class AutoScheduleGenerator {
               if (placedThisWeek) break;
               if (placedSessions >= totalSessions) break;
               
-              // 休日チェック
+              // 日付計算
               const date = this.calculateDate(options.startDate, week, day);
+              const dateObj = new Date(date);
+              
+              // 休日チェック
               if (this.isHoliday(date)) {
                 console.log(`⏩ ${date}(${day})は休日のためスキップ`);
+                continue;
+              }
+              
+              // 成果発表会期間チェック（1/26-1/28）
+              const presentationStart = new Date('2026-01-26');
+              const presentationEnd = new Date('2026-01-28');
+              if (dateObj >= presentationStart && dateObj <= presentationEnd) {
+                console.log(`⏩ ${date}は成果発表会期間のためスキップ`);
+                continue;
+              }
+              
+              // 補講期間チェック（1/29-2/6）
+              const makeupStart = new Date('2026-01-29');
+              const makeupEnd = new Date('2026-02-06');
+              if (dateObj >= makeupStart && dateObj <= makeupEnd) {
+                console.log(`⏩ ${date}は補講期間のためスキップ`);
                 continue;
               }
               
