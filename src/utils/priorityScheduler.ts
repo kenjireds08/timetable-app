@@ -28,11 +28,11 @@ export class PriorityScheduler {
    */
   static sortTeachersByPriority(teachers: Teacher[]): TeacherPriority[] {
     const priorityList: TeacherPriority[] = [];
-
+    
     for (const teacher of teachers) {
       let priority = 0;
-      const fixedSchedule: FixedSchedule[] = [];
-
+      let fixedSchedule: any[] = [];
+      
       // requireConfirmedフラグがある場合は最優先（鈴木先生など）
       if ((teacher as any).requireConfirmed) {
         priority += 1000;
@@ -55,8 +55,11 @@ export class PriorityScheduler {
             { week: 11, date: '2025-12-03', dayOfWeek: '水', subject: 'プレゼン実践②発表' },
             { week: 12, date: '2025-12-10', dayOfWeek: '水', subject: 'プレゼン実践②発表' },
             { week: 13, date: '2025-12-17', dayOfWeek: '水', subject: 'プレゼン実践③オンライン' },
+            { week: 14, date: '2025-12-24', dayOfWeek: '水', subject: 'プレゼン実践③オンラインでのプレゼン・フィードバック' },
+            { week: 16, date: '2026-01-07', dayOfWeek: '水', subject: 'ここまでのおさらい・成果発表会に向けた導入とレクチャー' },
             { week: 17, date: '2026-01-14', dayOfWeek: '水', subject: '成果発表会プレゼン準備' },
             { week: 18, date: '2026-01-19', dayOfWeek: '月', period: '3限,4限', subject: '成果発表会プレゼン' },
+            { week: 18, date: '2026-01-19', dayOfWeek: '月', subject: '成果発表会プレゼンテーション' },
             { week: 18, date: '2026-01-21', dayOfWeek: '水', subject: 'ふりかえり' }
           );
         }

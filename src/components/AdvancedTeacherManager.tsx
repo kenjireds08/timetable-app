@@ -27,10 +27,25 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
 
   // 制約データをロード
   useEffect(() => {
+    // LocalStorageから読み込みを試みる
+    const savedData = localStorage.getItem('teachers_constraints_2025H2');
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setConstraintsData(parsedData);
+        return;
+      } catch (err) {
+        console.error('LocalStorageデータの解析に失敗:', err);
+      }
+    }
+    
+    // LocalStorageにない場合はファイルから読み込み
     fetch('/config/teachers_constraints_2025H2.json')
       .then(res => res.json())
       .then(data => {
         setConstraintsData(data);
+        // LocalStorageに保存
+        localStorage.setItem('teachers_constraints_2025H2', JSON.stringify(data));
       })
       .catch(err => console.error('制約データの読み込みに失敗:', err));
   }, []);
@@ -56,7 +71,8 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
             confirmed: formData.constraints?.confirmed || [],
             ng: formData.constraints?.ng || {},
             wish: formData.constraints?.wish || {},
-            notes: formData.constraints?.specialNotes || ''
+            notes: formData.constraints?.specialNotes || '',
+            subjects: (formData.constraints as any)?.subjects || []
           };
         } else {
           // 新規教師の追加
@@ -67,7 +83,7 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
             confirmed: formData.constraints?.confirmed || [],
             ng: formData.constraints?.ng || {},
             wish: formData.constraints?.wish || {},
-            subjects: [],
+            subjects: (formData.constraints as any)?.subjects || [],
             notes: formData.constraints?.specialNotes || ''
           });
         }
@@ -106,8 +122,10 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
         ...teacher.constraints,
         confirmed: constraintData?.confirmed || [],
         ng: constraintData?.ng || { days: [], periods: [], dates: [], notes: '' },
-        wish: constraintData?.wish || { preferDays: [], preferConsecutive: false, preferPackedDay: false, biweekly: null, periods: [], notes: '' }
-      }
+        wish: constraintData?.wish || { preferDays: [], preferConsecutive: false, preferPackedDay: false, biweekly: null, periods: [], notes: '' },
+        specialNotes: constraintData?.notes || '',
+        subjects: constraintData?.subjects || []
+      } as any
     });
   };
 
@@ -332,11 +350,23 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
       <div className="constraint-section">
         <h5 style={{ color: '#6b7280' }}>💡 詳細</h5>
         <div className="form-group">
-          <label>担当科目・補足説明</label>
+          <label>担当科目（カンマ区切りで入力）</label>
+          <input
+            type="text"
+            value={(formData.constraints as any)?.subjects?.join(', ') || ''}
+            onChange={(e) => {
+              const subjects = e.target.value.split(',').map(s => s.trim()).filter(s => s);
+              updateConstraints('subjects', subjects);
+            }}
+            placeholder="例: ビジネス実務, ビジネス実務I, ビジネス実務II"
+          />
+        </div>
+        <div className="form-group">
+          <label>補足説明・備考</label>
           <textarea
             value={formData.constraints?.specialNotes || ''}
             onChange={(e) => updateConstraints('specialNotes', e.target.value)}
-            placeholder="例: ビジネス実務担当&#10;前期と同じスケジュール希望&#10;変更対応困難"
+            placeholder="例: 鈴木さんとセット&#10;前期と同じスケジュール希望&#10;変更対応困難"
             rows={4}
           />
         </div>
@@ -401,24 +431,21 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
 
       {/* 教師一覧 */}
       <div className="teacher-list wide-layout">
-        {teachers.map(teacher => (
-          <div key={teacher.id} className="teacher-card advanced-card">
-            <div className="teacher-info">
-              <div className="teacher-header">
-                <h3>{teacher.name}</h3>
-                <div className="teacher-badges">
-                  <span className="badge">{teacher.type}</span>
+        {teachers.map(teacher => {
+          const constraintData = getTeacherConstraints(teacher.name);
+          
+          return (
+            <div key={teacher.id} className="teacher-card advanced-card">
+              <div className="teacher-info">
+                <div className="teacher-header">
+                  <h3>{teacher.name}</h3>
+                  <div className="teacher-badges">
+                    <span className="badge">{teacher.type}</span>
+                  </div>
                 </div>
-              </div>
 
-              {/* 確定/NG/希望/詳細の4区分表示 */}
-              {(() => {
-                const constraintData = getTeacherConstraints(teacher.name);
-                if (!constraintData) {
-                  return null;
-                }
-
-                return (
+                {/* 確定/NG/希望/詳細の4区分表示 */}
+                {constraintData && (
                   <div className="constraints-three-categories">
                     {/* 確定事項 - 常時表示 */}
                     <div className="constraint-category confirmed">
@@ -427,7 +454,7 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
                         <span style={{ color: '#10b981', fontWeight: 'bold' }}>確定</span>
                       </div>
                       <div className="category-items">
-                        {constraintData.confirmed && constraintData.confirmed.length > 0 ? (
+                        {constraintData.confirmed && Array.isArray(constraintData.confirmed) && constraintData.confirmed.length > 0 ? (
                           constraintData.confirmed.map((item: string, idx: number) => (
                             <span key={idx} className="constraint-tag confirmed-tag">{item}</span>
                           ))
@@ -444,24 +471,45 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
                         <span style={{ color: '#ef4444', fontWeight: 'bold' }}>NG</span>
                       </div>
                       <div className="category-items">
-                        {constraintData.ng && (constraintData.ng.days?.length > 0 || constraintData.ng.periods?.length > 0 || constraintData.ng.dates?.length > 0 || constraintData.ng.notes) ? (
-                          <>
-                            {constraintData.ng.days && constraintData.ng.days.map((day: string, idx: number) => (
-                              <span key={`day-${idx}`} className="constraint-tag ng-tag">{day}曜NG</span>
-                            ))}
-                            {constraintData.ng.periods && constraintData.ng.periods.map((period: number, idx: number) => (
-                              <span key={`period-${idx}`} className="constraint-tag ng-tag">{period}限NG</span>
-                            ))}
-                            {constraintData.ng.dates && constraintData.ng.dates.length > 0 && (
-                              <span className="constraint-tag ng-tag">特定日NG×{constraintData.ng.dates.length}</span>
-                            )}
-                            {constraintData.ng.notes && (
-                              <span className="constraint-tag ng-tag">{constraintData.ng.notes}</span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="category-empty">— 未入力</span>
-                        )}
+                        {(() => {
+                          const hasNgData = constraintData.ng && (
+                            (constraintData.ng.days && constraintData.ng.days.length > 0) ||
+                            (constraintData.ng.periods && (
+                              Array.isArray(constraintData.ng.periods) ? constraintData.ng.periods.length > 0 :
+                              Object.keys(constraintData.ng.periods).length > 0
+                            )) ||
+                            (constraintData.ng.dates && constraintData.ng.dates.length > 0) ||
+                            constraintData.ng.notes
+                          );
+
+                          if (hasNgData) {
+                            return (
+                              <>
+                                {constraintData.ng.days && constraintData.ng.days.map((day: string, idx: number) => (
+                                  <span key={`day-${idx}`} className="constraint-tag ng-tag">{day}曜NG</span>
+                                ))}
+                                {constraintData.ng.periods && Array.isArray(constraintData.ng.periods) && constraintData.ng.periods.map((period: number, idx: number) => (
+                                  <span key={`period-${idx}`} className="constraint-tag ng-tag">{period}限NG</span>
+                                ))}
+                                {constraintData.ng.periods && typeof constraintData.ng.periods === 'object' && !Array.isArray(constraintData.ng.periods) && 
+                                  Object.entries(constraintData.ng.periods).map(([day, periods]: [string, any], idx: number) => (
+                                    <span key={`period-obj-${idx}`} className="constraint-tag ng-tag">
+                                      {day}曜{Array.isArray(periods) ? periods.join('・') : periods}限NG
+                                    </span>
+                                  ))
+                                }
+                                {constraintData.ng.dates && constraintData.ng.dates.length > 0 && (
+                                  <span className="constraint-tag ng-tag">特定日NG×{constraintData.ng.dates.length}</span>
+                                )}
+                                {constraintData.ng.notes && (
+                                  <span className="constraint-tag ng-tag">{constraintData.ng.notes}</span>
+                                )}
+                              </>
+                            );
+                          } else {
+                            return <span className="category-empty">— 未入力</span>;
+                          }
+                        })()}
                       </div>
                     </div>
 
@@ -472,29 +520,55 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
                         <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>希望</span>
                       </div>
                       <div className="category-items">
-                        {constraintData.wish && (constraintData.wish.preferDays?.length > 0 || constraintData.wish.preferConsecutive || constraintData.wish.preferPackedDay || constraintData.wish.biweekly || constraintData.wish.notes) ? (
-                          <>
-                            {constraintData.wish.preferDays && constraintData.wish.preferDays.map((day: string, idx: number) => (
-                              <span key={`pday-${idx}`} className="constraint-tag wish-tag">{day}希望</span>
-                            ))}
-                            {constraintData.wish.preferConsecutive && (
-                              <span className="constraint-tag wish-tag">連続コマ希望</span>
-                            )}
-                            {constraintData.wish.preferPackedDay && (
-                              <span className="constraint-tag wish-tag">1日集約希望</span>
-                            )}
-                            {constraintData.wish.biweekly && (
-                              <span className="constraint-tag wish-tag">
-                                {constraintData.wish.biweekly === 'odd' ? '奇数週' : '偶数週'}
-                              </span>
-                            )}
-                            {constraintData.wish.notes && (
-                              <span className="constraint-tag wish-tag">{constraintData.wish.notes}</span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="category-empty">— 未入力</span>
-                        )}
+                        {(() => {
+                          const hasWishData = constraintData.wish && (
+                            (constraintData.wish.preferDays && constraintData.wish.preferDays.length > 0) ||
+                            (constraintData.wish.periods && (
+                              Array.isArray(constraintData.wish.periods) ? constraintData.wish.periods.length > 0 :
+                              Object.keys(constraintData.wish.periods).length > 0
+                            )) ||
+                            constraintData.wish.preferConsecutive ||
+                            constraintData.wish.preferPackedDay ||
+                            constraintData.wish.biweekly ||
+                            constraintData.wish.notes
+                          );
+
+                          if (hasWishData) {
+                            return (
+                              <>
+                                {constraintData.wish.preferDays && constraintData.wish.preferDays.map((day: string, idx: number) => (
+                                  <span key={`pday-${idx}`} className="constraint-tag wish-tag">{day}曜希望</span>
+                                ))}
+                                {constraintData.wish.periods && Array.isArray(constraintData.wish.periods) && constraintData.wish.periods.map((period: number, idx: number) => (
+                                  <span key={`period-${idx}`} className="constraint-tag wish-tag">{period}限希望</span>
+                                ))}
+                                {constraintData.wish.periods && typeof constraintData.wish.periods === 'object' && !Array.isArray(constraintData.wish.periods) &&
+                                  Object.entries(constraintData.wish.periods).map(([day, periods]: [string, any], idx: number) => (
+                                    <span key={`wish-period-${idx}`} className="constraint-tag wish-tag">
+                                      {day}曜{Array.isArray(periods) ? periods.join('・') : periods}限希望
+                                    </span>
+                                  ))
+                                }
+                                {constraintData.wish.preferConsecutive && (
+                                  <span className="constraint-tag wish-tag">連続コマ希望</span>
+                                )}
+                                {constraintData.wish.preferPackedDay && (
+                                  <span className="constraint-tag wish-tag">1日集約希望</span>
+                                )}
+                                {constraintData.wish.biweekly && (
+                                  <span className="constraint-tag wish-tag">
+                                    {constraintData.wish.biweekly === 'odd' ? '奇数週' : '偶数週'}
+                                  </span>
+                                )}
+                                {constraintData.wish.notes && (
+                                  <span className="constraint-tag wish-tag">{constraintData.wish.notes}</span>
+                                )}
+                              </>
+                            );
+                          } else {
+                            return <span className="category-empty">— 未入力</span>;
+                          }
+                        })()}
                       </div>
                     </div>
 
@@ -504,7 +578,7 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
                         💡 <span style={{ color: '#6b7280', fontWeight: 'bold' }}>詳細</span>
                       </div>
                       <div className="details-content">
-                        {(constraintData.notes || constraintData.subjects?.length > 0) ? (
+                        {(constraintData.notes || (constraintData.subjects && constraintData.subjects.length > 0)) ? (
                           <>
                             {constraintData.subjects && constraintData.subjects.length > 0 && (
                               <div className="detail-item">
@@ -521,20 +595,20 @@ const AdvancedTeacherManager = ({ teachers, subjects, onAdd, onUpdate, onDelete 
                       </div>
                     </div>
                   </div>
-                );
-              })()}
-            </div>
+                )}
+              </div>
 
-            <div className="teacher-actions">
-              <button className="btn-icon" onClick={() => handleEdit(teacher)}>
-                <Edit2 size={16} />
-              </button>
-              <button className="btn-icon delete" onClick={() => onDelete(teacher.id)}>
-                <Trash2 size={16} />
-              </button>
+              <div className="teacher-actions">
+                <button className="btn-icon" onClick={() => handleEdit(teacher)}>
+                  <Edit2 size={16} />
+                </button>
+                <button className="btn-icon delete" onClick={() => onDelete(teacher.id)}>
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

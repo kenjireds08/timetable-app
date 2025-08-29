@@ -157,7 +157,7 @@ export const mockTeachers: Teacher[] = [
         days: ['水'],
         notes: '火曜、木曜3,4時間目、水曜希望'
       },
-      specialNotes: '10/22(水)3,4時間目2コマ確定。月曜は不規則な予定ありNG'
+      specialNotes: '10/22(水)3,4時間目2コマ確定。月曜はすでに予定アリ(NG）の日もあり（不規則のため現行NGとする）'
     }
   },
   
