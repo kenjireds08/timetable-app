@@ -963,10 +963,18 @@ export class AutoScheduleGenerator {
     const distribution: number[] = [];
     let remaining = total;
     
+    // 均等に分散させる（少なくとも17週目までカバーするように）
+    const sessionsPerWeek = Math.min(1, Math.floor(total / weeks));
+    
     for (let week = 0; week < weeks; week++) {
-      const sessionsThisWeek = Math.min(maxPerWeek, Math.ceil(remaining / (weeks - week)));
-      distribution.push(sessionsThisWeek);
-      remaining -= sessionsThisWeek;
+      if (remaining <= 0) {
+        distribution.push(0);
+      } else {
+        // 各週に1コマずつ配置（最大maxPerWeekまで）
+        const sessionsThisWeek = Math.min(maxPerWeek, Math.min(sessionsPerWeek + (week < total % weeks ? 1 : 0), remaining));
+        distribution.push(sessionsThisWeek);
+        remaining -= sessionsThisWeek;
+      }
     }
     
     return distribution;
