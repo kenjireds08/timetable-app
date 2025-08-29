@@ -51,7 +51,12 @@
       "Bash(echo:*)",
       "Read(/var/folders/qx/6_t416w11yv492lx56z4lzr00000gn/T/TemporaryItems/NSIRD_screencaptureui_qU1RtJ/**)",
       "Read(/Users/kikuchikenji/Library/Containers/at.EternalStorms.Yoink/Data/Documents/YoinkPromisedFiles.noIndex/yoinkFilePromiseCreationFolder4AF8352C-0AA6-4DBB-9DFA-828D177F020D/add4AF8352C-0AA6-4DBB-9DFA-828D177F020D/**)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "mcp__serena__find_file",
+      "Read(/Users/kikuchikenji/Downloads/**)",
+      "Read(/Users/kikuchikenji/Library/Application Support/CleanShot/media/media_PIaeCWCdot/**)",
+      "Read(/var/folders/qx/6_t416w11yv492lx56z4lzr00000gn/T/TemporaryItems/NSIRD_screencaptureui_HlUuWR/**)",
+      "Read(/var/folders/qx/6_t416w11yv492lx56z4lzr00000gn/T/TemporaryItems/NSIRD_screencaptureui_mWBK25/**)"
     ],
     "deny": [],
     "ask": []

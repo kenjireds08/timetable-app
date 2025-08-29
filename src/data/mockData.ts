@@ -1,334 +1,270 @@
-import type { Teacher, Subject, Classroom, ScheduleEntry } from '../types';
+import type { Teacher, Subject, Classroom, ScheduleEntry, DayOfWeek, BiweeklyType } from '../types';
 
 export const mockTeachers: Teacher[] = [
-  // 共通科目担当
+  // === 共通科目担当 ===
   {
     id: 't1',
-    name: '鈴木 俊良',
-    type: '常勤',
+    name: '鈴木俊良',
+    type: '非常勤',
     constraints: {
-      confirmed: {
-        days: ['水'],
-        specialSchedule: [
-          { date: '2025-10-15', subject: 'デザインとプレゼンテーション' },
-          { date: '2025-10-22', subject: 'デザインとプレゼンテーション' },
-          { date: '2025-10-29', subject: 'デザインとプレゼンテーション' },
-          { date: '2025-11-05', subject: 'デザインとプレゼンテーション' },
-          { date: '2025-11-12', subject: 'デザインとプレゼンテーション' },
-          { date: '2025-11-19', subject: 'デザインとプレゼンテーション' },
-          { date: '2025-11-26', subject: 'デザインとプレゼンテーション' },
-          { date: '2025-12-03', subject: 'デザインとプレゼンテーション' },
-          { date: '2025-12-10', subject: 'デザインとプレゼンテーション' },
-          { date: '2025-12-17', subject: 'デザインとプレゼンテーション' },
-          { date: '2025-12-24', subject: 'デザインとプレゼンテーション' },
-          { date: '2026-01-07', subject: 'デザインとプレゼンテーション' },
-          { date: '2026-01-14', subject: 'デザインとプレゼンテーション' },
-          { date: '2026-01-19', subject: '成果発表会プレゼン', periods: ['3限', '4限'] },
-          { date: '2026-01-21', subject: 'ふりかえり' }
-        ]
-      },
-      preferred: {
-        consecutivePeriods: [['3限', '4限']],
-        notes: '水曜14-15コマ目は連続希望'
-      },
-      specialNotes: 'クリエイティブコミュニケーションラボ、デザインとプレゼンテーション担当。宮嵜さんとセット'
+      fixed: [
+        // デザインとプレゼンテーション（単独授業）の確定日程
+        { date: '2025-10-15', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2025-10-22', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2025-10-29', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2025-11-05', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2025-11-12', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2025-11-19', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2025-11-26', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2025-12-03', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2025-12-10', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2025-12-17', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2025-12-24', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2026-01-07', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2026-01-14', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2026-01-19', dayOfWeek: '月', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' },
+        { date: '2026-01-21', dayOfWeek: '水', periods: ['3限', '4限'], subjectNote: 'デザインとプレゼンテーション' }
+      ],
+      wish: {
+        preferredContinuous: true, // 水曜14-15コマ目は連続希望
+        preferredDays: ['木', '金'] as DayOfWeek[], // クリエイティブコミュニケーションラボ用（宮嵜さんに合わせる）
+      }
     }
   },
   {
     id: 't2',
-    name: '宮嵜 真由美',
-    type: '常勤',
+    name: '宮嵜真由美',
+    type: '非常勤',
     constraints: {
-      confirmed: {
-        days: ['木', '金']
-      },
-      unavailable: {
-        days: ['月', '火', '水'],
-        allDay: true
-      },
-      specialNotes: '木曜、金曜確定。月曜、火曜、水曜終日NG。鈴木さんとセット。ビジネス実務担当'
+      fixed: [
+        { dayOfWeek: '木', periods: ['1限', '2限', '3限', '4限'] },
+        { dayOfWeek: '金', periods: ['1限', '2限', '3限', '4限'] }
+      ],
+      ng: {
+        days: ['月', '火', '水'] as DayOfWeek[]
+      }
     }
   },
   {
     id: 't3',
-    name: '井手 修身',
+    name: '井手修身',
     type: '非常勤',
     constraints: {
-      confirmed: {
-        specialSchedule: [
-          { date: '2025-11-28', periods: ['3限'], subject: '次世代地域リーダー学（全学年合同）' }
-        ]
-      },
-      specialNotes: '11/28(金)1コマ全学年確定。その他条件なし（確認中）'
+      fixed: [
+        { date: '2025-11-28', dayOfWeek: '金', periods: ['3限'] }
+      ]
     }
   },
   {
     id: 't4',
-    name: '夏井 美果',
+    name: '夏井美果',
     type: '非常勤',
     constraints: {
-      confirmed: {
-        days: ['木'],
-        periods: ['1限', '2限']
-      },
-      unavailable: {
-        days: ['月', '火', '水', '金'],
-        allDay: true
-      },
-      specialNotes: '木曜1,2時間目確定。Essential English I & II担当（コンビ授業）。夏井さん、松永さんセット（1年）、夏井さん、副島さんセット（2年）'
+      fixed: [
+        { dayOfWeek: '木', periods: ['1限', '2限'] }
+      ],
+      ng: {
+        days: ['月', '火', '水', '金'] as DayOfWeek[]
+      }
     }
   },
   {
     id: 't5',
-    name: '松永 祐一',
+    name: '松永祐一',
     type: '非常勤',
     constraints: {
-      confirmed: {
-        days: ['木'],
-        periods: ['1限']
-      },
-      unavailable: {
-        days: ['月', '火', '水', '金'],
-        allDay: true
-      },
-      specialNotes: '木曜1時間目確定。ビジネス日本語I担当（コンビ授業）。夏井さん、松永さんセット'
+      fixed: [
+        { dayOfWeek: '木', periods: ['1限'] }
+      ],
+      ng: {
+        days: ['月', '火', '水', '金'] as DayOfWeek[]
+      }
     }
   },
   {
     id: 't6',
-    name: '副島 小春',
+    name: '副島小春',
     type: '非常勤',
     constraints: {
-      confirmed: {
-        days: ['木'],
-        periods: ['2限']
-      },
-      unavailable: {
-        days: ['月', '火', '水', '金'],
-        allDay: true
-      },
-      specialNotes: '木曜2時間目確定。ビジネス日本語II担当（コンビ授業）。夏井さん、副島さんセット'
+      fixed: [
+        { dayOfWeek: '木', periods: ['2限'] }
+      ],
+      ng: {
+        days: ['月', '火', '水', '金'] as DayOfWeek[]
+      }
     }
   },
   {
     id: 't7',
-    name: '木下 俊和',
+    name: '木下俊和',
     type: '非常勤',
     constraints: {
-      confirmed: {
-        days: ['月', '金'],
-        classesPerDay: 2
+      fixed: [
+        { dayOfWeek: '月', periods: ['1限', '2限', '3限', '4限'] },
+        { dayOfWeek: '金', periods: ['1限', '2限', '3限', '4限'] }
+      ],
+      ng: {
+        days: ['火', '木'] as DayOfWeek[]
       },
-      unavailable: {
-        days: ['火', '木'],
-        allDay: true
-      },
-      preferred: {
-        days: ['月', '水', '金'],
-        consecutivePeriods: [['1限', '2限'], ['2限', '3限']],
-        notes: '1、2限の連続、または2、3限の連続希望'
-      },
-      specialNotes: '月曜、金曜1日2コマ×2日確定。火曜、木曜終日NG。調整の余地あり'
+      wish: {
+        preferredContinuous: true,
+        preferredPeriods: [1, 2] // 1-2限または2-3限の連続希望
+      }
     }
   },
   {
     id: 't8',
-    name: '田上 寛美',
-    type: '常勤',
-    constraints: {
-      confirmed: {
-        specialSchedule: [
-          { date: '2025-10-22', periods: ['3限', '4限'], subject: 'キャリア実践I' }
-        ]
-      },
-      unavailable: {
-        days: ['月', '金'],
-        allDay: true,
-        periods: {
-          火: ['1限', '2限'],
-          木: ['1限', '2限']
-        }
-      },
-      preferred: {
-        periods: {
-          火: ['3限', '4限'],
-          木: ['3限', '4限']
-        },
-        days: ['水'],
-        notes: '火曜、木曜3,4時間目、水曜希望'
-      },
-      specialNotes: '10/22(水)3,4時間目2コマ確定。月曜はすでに予定アリ(NG）の日もあり（不規則のため現行NGとする）'
-    }
-  },
-  
-  // IT専門科目担当
-  {
-    id: 't9',
-    name: '小山 善文',
+    name: '田上寛美',
     type: '非常勤',
     constraints: {
-      confirmed: {
-        periods: {
-          月: ['3限', '4限'],
-          木: ['2限', '3限', '4限']
-        }
+      fixed: [
+        { date: '2025-10-22', dayOfWeek: '水', periods: ['3限', '4限'] }
+      ],
+      ng: {
+        days: ['月', '金'] as DayOfWeek[]
       },
-      unavailable: {
-        days: ['火', '水', '金'],
-        allDay: true
-      },
-      specialNotes: '月曜3,4時間目、木曜2,3,4時間目確定。地域課題×IT、セキュリティ基礎担当'
+      wish: {
+        preferredDays: ['火', '木', '水'] as DayOfWeek[],
+        preferredPeriods: [3, 4]
+      }
+    }
+  },
+
+  // === IT専門科目担当 ===
+  {
+    id: 't9',
+    name: '小山善文',
+    type: '非常勤',
+    constraints: {
+      fixed: [
+        { dayOfWeek: '月', periods: ['3限', '4限'] },
+        { dayOfWeek: '木', periods: ['2限', '3限', '4限'] }
+      ],
+      ng: {
+        days: ['火', '水', '金'] as DayOfWeek[]
+      }
     }
   },
   {
     id: 't10',
-    name: '西川 徹',
+    name: '西川徹',
     type: '非常勤',
     constraints: {
-      preferred: {
-        days: ['水', '木'],
-        consecutivePeriods: [['1限', '2限'], ['2限', '3限']],
-        notes: '週1日、I（1年生）とII（2年生）2コマ続き'
-      },
-      specialNotes: 'IoTとデータ活用I & II担当。週1日で1年と2年を連続授業'
+      wish: {
+        preferredDays: ['水', '木'] as DayOfWeek[],
+        preferredContinuous: true,
+        preferredPeriods: [1, 2] // 1-2限または2-3限の連続
+      }
     }
   },
   {
     id: 't11',
-    name: '岩木 健',
+    name: '岩木健',
     type: '非常勤',
     constraints: {
-      confirmed: {
-        days: ['水']
-      },
-      unavailable: {
-        days: ['月', '火', '木', '金'],
-        allDay: true
-      },
-      specialNotes: '生成AI開発担当。水曜日のみ、他曜日終日NG'
+      fixed: [
+        { dayOfWeek: '水', periods: ['1限', '2限', '3限', '4限'] }
+      ],
+      ng: {
+        days: ['月', '火', '木', '金'] as DayOfWeek[]
+      }
     }
   },
   {
     id: 't12',
-    name: '孫 寧平',
+    name: '孫寧平',
     type: '非常勤',
     constraints: {
-      confirmed: {
-        subjectSchedules: {
-          'データベース概論': {
-            period: '10-11月（後期前半）',
-            days: ['木'],
-            periods: ['3限', '4限']
-          },
-          'オブジェクト指向プログラミング': {
-            days: ['火', '水'],
-            periods: ['3限', '4限'],
-            notes: '[Webアプリ開発]と同じ日程(連続コマ)'
-          },
-          'データベース設計': {
-            period: '12-1月（後期後半）',
-            days: ['木'],
-            periods: ['3限', '4限']
-          },
-          'Webアプリ開発': {
-            days: ['火', '水'],
-            periods: ['3限', '4限'],
-            notes: '[オブジェクト指向プログラミング]と同じ日程(連続コマ)'
-          }
-        }
+      fixed: [
+        // データベース概論：10-11月の木曜3,4限
+        { dayOfWeek: '木', periods: ['3限', '4限'], startWeek: 1, endWeek: 8, subjectNote: 'データベース概論' },
+        // データベース設計：12-1月の木曜3,4限
+        { dayOfWeek: '木', periods: ['3限', '4限'], startWeek: 13, endWeek: 19, subjectNote: 'データベース設計' }
+      ],
+      ng: {
+        days: ['月', '金'] as DayOfWeek[]
       },
-      unavailable: {
-        days: ['月', '金']
-      },
-      specialNotes: '月曜、金曜NG。1年ITは「たかねこ」実施要望'
+      wish: {
+        // オブジェクト指向とWebアプリは火曜または水曜の3,4限で同じ日に実施
+        preferredDays: ['火', '水'] as DayOfWeek[],
+        preferredPeriods: [3, 4],
+        preferredContinuous: true // 同じ日に連続で実施
+      }
     }
   },
   {
     id: 't13',
-    name: '森田 典子',
+    name: '森田典子',
     type: '非常勤',
     constraints: {
-      confirmed: {
-        days: ['火', '水']
+      fixed: [
+        { dayOfWeek: '火', periods: ['2限', '3限', '4限'] },
+        { dayOfWeek: '水', periods: ['2限', '3限', '4限'] }
+      ],
+      ng: {
+        periods: [1] // 月木金の1時間目NG
       },
-      unavailable: {
-        periods: ['1限'],
-        days: ['月', '木', '金']
-      },
-      preferred: {
-        sameSchedule: ['卒業制作', '進級制作'],
-        notes: '[卒業制作]と[進級制作]を同じ日程(連続コマ)'
-      },
-      specialNotes: '火曜、水曜確定。月曜、木曜、金曜の1時間目NG'
+      wish: {
+        preferredContinuous: true // 進級制作と卒業制作を同じ日程で連続
+      }
     }
   },
   {
     id: 't14',
-    name: '村上 大輔',
+    name: '村上大輔',
     type: '非常勤',
     constraints: {
-      confirmed: {
-        days: ['火', '木']
+      fixed: [
+        { dayOfWeek: '火', periods: ['1限', '2限'] },
+        { dayOfWeek: '木', periods: ['1限', '2限'] }
+      ],
+      ng: {
+        days: ['水', '金'] as DayOfWeek[]
       },
-      unavailable: {
-        days: ['水', '金']
-      },
-      preferred: {
-        periods: {
-          火: [['1限', '2限']],
-          木: [['1限', '2限']]
-        },
-        notes: '火曜の午前中1・2コマ連続、木曜の午前中1・2コマ連続'
-      },
-      specialNotes: '情報視覚化担当（単独）。火曜・木曜の1-2限連続、水曜・金曜NG'
+      wish: {
+        preferredContinuous: true
+      }
     }
   },
   {
     id: 't15',
-    name: '吉井 幸宗',
+    name: '吉井幸宗',
     type: '非常勤',
     constraints: {
-      confirmed: {
-        frequency: '隔週',
-        days: ['金'],
-        periods: ['3限', '4限']
+      fixed: [
+        { dayOfWeek: '金', periods: ['3限', '4限'], biweekly: 'odd' as BiweeklyType }
+      ],
+      ng: {
+        days: ['火', '水', '木'] as DayOfWeek[]
       },
-      unavailable: {
-        days: ['火', '水', '木'],
-        allDay: true
-      },
-      preferred: {
-        alternativePeriods: {
-          月: ['1限', '2限']
-        },
-        notes: '月曜1,2時間目も可能'
-      },
-      specialNotes: 'セキュリティ診断担当。隔週の金曜3,4時間目確定'
+      wish: {
+        preferredDays: ['月'] as DayOfWeek[],
+        preferredPeriods: [1, 2]
+      }
     }
   },
-  
-  // TD専門科目担当
+
+  // === TD専門科目担当 ===
   {
     id: 't16',
     name: 'Fiona',
     type: '非常勤',
     constraints: {
-      confirmed: {
-        days: ['木'],
-        periods: ['3限', '4限'],
-        specialTimeStart: '13:15',
-        makeupSchedule: {
-          totalDelayMinutes: 240, // 16コマ×15分遅れ
-          makeupLocation: '月',
-          makeupClasses: 3,
-          notes: '後期16コマ×遅れ15分＝240分を月曜3コマで補填'
+      fixed: [
+        { dayOfWeek: '木', periods: ['3限', '4限'], specialNote: '13:15開始' }
+      ],
+      ng: {
+        days: ['火', '水', '金'] as DayOfWeek[]
+      },
+      specialRequirement: {
+        mondayMakeup: {
+          totalMinutes: 240, // 15分×16週
+          suggestedPattern: [
+            { day1: { periods: ['3限', '4限'], minutes: 165 } }, // 1日目：3限+4限
+            { day2: { periods: ['3限'], minutes: 75 } }  // 2日目：3限のみ
+          ]
         }
-      },
-      unavailable: {
-        days: ['火', '水', '金'],
-        allDay: true
-      },
-      specialNotes: '木曜3,4時間目確定（3限は13:15開始で15分遅れ）。不足分240分を月曜で補填する必要あり'
+      }
     }
   },
   {
@@ -336,50 +272,44 @@ export const mockTeachers: Teacher[] = [
     name: 'Lee',
     type: '非常勤',
     constraints: {
-      confirmed: {
-        periods: {
-          木: ['4限'],
-          金: ['3限', '4限']
-        }
-      },
-      unavailable: {
-        days: ['月', '火', '水'],
-        allDay: true
-      },
-      specialNotes: '木曜4時間目、金曜3,4時間目確定。Business English I & II担当'
+      fixed: [
+        { dayOfWeek: '木', periods: ['4限'] },
+        { dayOfWeek: '金', periods: ['3限', '4限'] }
+      ],
+      ng: {
+        days: ['月', '火', '水'] as DayOfWeek[]
+      }
     }
   },
   {
     id: 't18',
-    name: '廣瀬 実華',
-    type: '常勤',
+    name: '廣瀬実華',
+    type: '非常勤',
     constraints: {
-      confirmed: {
-        days: ['月', '火', '木', '金'],
-        specialSchedule: [
-          { date: '2025-09-30', periods: ['1限'], subject: 'Webデザイン（ノーコード）' }
-        ]
+      fixed: [
+        { date: '2025-09-30', dayOfWeek: '火', periods: ['4限'] }
+      ],
+      ng: {
+        days: ['月'] as DayOfWeek[], // 月曜は使用しない
+        dates: ['2025-10-17', '2025-12-02']
       },
-      unavailable: {
-        specificDates: ['2025-10-17', '2025-12-01', '2025-12-02'],
-        recurringTime: {
-          day: '月',
-          time: '10:00-11:00',
-          notes: '毎週月曜10:00-11:00NG'
-        }
-      },
-      specialNotes: '月曜、火曜、木曜、金曜確定。10/17(金)、12/1(月)、12/2(火)NG。毎週月曜10:00-11:00NG。SNS/PR実践、Webデザイン担当'
+      wish: {
+        preferredDays: ['火', '木', '金'] as DayOfWeek[]
+      }
     }
   },
   {
     id: 't19',
-    name: '久保 尭之',
-    type: '常勤',
+    name: '久保尭之',
+    type: '非常勤',
     constraints: {
-      specialNotes: '条件なし（確認中）。観光地域づくり実践（黒川温泉FW）は基本月曜設定科目。地域課題実践プロジェクト、ビジネス&マーケティング、観光関連、卒業プロジェクト担当'
+      // 確認中 ※一旦[条件なし]
+      wish: {
+        preferredDays: ['月'] as DayOfWeek[] // 観光地域づくり実践（FW）は月曜予定
+      }
     }
   }
-];;
+];;;
 
 export const mockSubjects: Subject[] = [
   // 共通科目

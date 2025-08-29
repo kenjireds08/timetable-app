@@ -677,71 +677,87 @@ export class AutoScheduleGenerator {
     const teacher2 = this.getAvailableTeacher(subject2, week, day, period);
     
     if (!teacher1 || !teacher2) {
+      console.log(`❌ コンビ授業: 教師が利用不可 - ${subject1.name}: ${teacher1?.name || 'なし'}, ${subject2.name}: ${teacher2?.name || 'なし'}`);
       return false;
     }
     
-    // 2つの教室が利用可能かチェック
+    // 2つの異なる教室が利用可能かチェック
     const classroom1 = this.getAvailableClassroom(subject1, week, day, period);
-    if (!classroom1) return false;
+    if (!classroom1) {
+      console.log(`❌ コンビ授業: ${subject1.name}の教室が確保できません`);
+      return false;
+    }
     
     const classroom2 = this.classrooms.find(c => {
-      if (c.id === classroom1.id) return false;
+      if (c.id === classroom1.id) return false; // 同じ教室は使わない
       const slotKey = `${week}-${day}-${period}`;
       const roomSchedule = this.classroomSchedule.get(c.id) || new Set();
-      return !roomSchedule.has(slotKey);
+      // subject2の利用可能教室リストに含まれているかチェック
+      return !roomSchedule.has(slotKey) && 
+             (!subject2.availableClassroomIds || 
+              subject2.availableClassroomIds.length === 0 || 
+              subject2.availableClassroomIds.includes(c.id));
     });
     
-    if (!classroom2) return false;
+    if (!classroom2) {
+      console.log(`❌ コンビ授業: ${subject2.name}の教室が確保できません`);
+      return false;
+    }
     
-    // グループを2つに分けて配置
-    const group1 = groups[0];
-    const group2 = groups[1] || groups[0]; // 1グループしかない場合の処理
+    const date = this.calculateDate(startDate, week, day);
     
-    // グループ1にsubject1を配置
-    const entry1: GeneratedEntry = {
-      id: `${group1.id}-${subject1.id}-${week}-${day}-${period}`,
-      timeSlot: {
-        week,
-        date: this.calculateDate(startDate, week, day),
-        dayOfWeek: day,
-        period
-      },
-      subjectId: subject1.id,
-      subjectName: `${subject1.name} [コンビ]`,
-      teacherId: teacher1.id,
-      teacherName: teacher1.name,
-      classroomId: classroom1.id,
-      classroomName: classroom1.name
-    };
+    // 同じ学年の全グループに両方の授業を配置（学生が選択できるように）
+    for (const group of groups) {
+      // subject1のエントリ（例：Essential English）
+      const entry1: GeneratedEntry = {
+        id: `${group.id}-${subject1.id}-${week}-${day}-${period}`,
+        timeSlot: {
+          week,
+          date,
+          dayOfWeek: day,
+          period
+        },
+        subjectId: subject1.id,
+        subjectName: `${subject1.name} [コンビ]`,
+        teacherId: teacher1.id,
+        teacherName: teacher1.name,
+        classroomId: classroom1.id,
+        classroomName: classroom1.name
+      };
+      
+      // subject2のエントリ（例：ビジネス日本語）
+      const entry2: GeneratedEntry = {
+        id: `${group.id}-${subject2.id}-${week}-${day}-${period}`,
+        timeSlot: {
+          week,
+          date,
+          dayOfWeek: day,
+          period
+        },
+        subjectId: subject2.id,
+        subjectName: `${subject2.name} [コンビ]`,
+        teacherId: teacher2.id,
+        teacherName: teacher2.name,
+        classroomId: classroom2.id,
+        classroomName: classroom2.name
+      };
+      
+      // 両方の授業をスケジュールに追加
+      const groupSchedule = schedule.get(group.id) || [];
+      groupSchedule.push(entry1);
+      groupSchedule.push(entry2);
+      schedule.set(group.id, groupSchedule);
+      
+      console.log(`✅ ${group.name}にコンビ授業配置: ${subject1.name}(${classroom1.name}) & ${subject2.name}(${classroom2.name})`);
+    }
     
-    // グループ2にsubject2を配置
-    const entry2: GeneratedEntry = {
-      id: `${group2.id}-${subject2.id}-${week}-${day}-${period}`,
-      timeSlot: {
-        week,
-        date: this.calculateDate(startDate, week, day),
-        dayOfWeek: day,
-        period
-      },
-      subjectId: subject2.id,
-      subjectName: `${subject2.name} [コンビ]`,
-      teacherId: teacher2.id,
-      teacherName: teacher2.name,
-      classroomId: classroom2.id,
-      classroomName: classroom2.name
-    };
+    // スロットを使用中にマーク（グループ共通）
+    for (const group of groups) {
+      const slotKey = `${group.id}-${week}-${day}-${period}`;
+      this.usedSlots.add(slotKey);
+    }
     
-    // スケジュールに追加
-    const schedule1 = schedule.get(group1.id) || [];
-    schedule1.push(entry1);
-    schedule.set(group1.id, schedule1);
-    
-    const schedule2 = schedule.get(group2.id) || [];
-    schedule2.push(entry2);
-    schedule.set(group2.id, schedule2);
-    
-    // スロットを使用中にマーク
-    this.markSlotUsedForSpecificGroups(groups, week, day, period);
+    // 教師と教室のスケジュールを更新
     this.addToTeacherSchedule(teacher1.id, week, day, period);
     this.addToTeacherSchedule(teacher2.id, week, day, period);
     this.addToClassroomSchedule(classroom1.id, week, day, period);
@@ -752,6 +768,51 @@ export class AutoScheduleGenerator {
 
   // 既存のヘルパーメソッド（変更なし）
   private getAvailableTeacher(subject: Subject, week: number, day: string, period: string): Teacher | null {
+    const availableTeachers: Teacher[] = [];
+    
+    // まず、この時間枠に確定条件を持つ教師を探す
+    for (const teacherId of subject.teacherIds) {
+      const teacher = this.teachers.find(t => t.id === teacherId);
+      if (!teacher) continue;
+      
+      // この教師がこの時間枠に確定条件を持っているか確認
+      if (teacher.constraints?.fixed) {
+        const dayOfWeek = day as DayOfWeek;
+        const hasFixedForThisSlot = teacher.constraints.fixed.some(f => {
+          if (f.dayOfWeek !== dayOfWeek || !f.periods.includes(period)) {
+            return false;
+          }
+          
+          // 週の範囲チェック
+          if (f.startWeek !== undefined && f.endWeek !== undefined) {
+            return week >= f.startWeek && week <= f.endWeek;
+          }
+          
+          // 隔週チェック
+          if (f.biweekly) {
+            const isOddWeek = week % 2 === 1;
+            return (f.biweekly === 'odd' && isOddWeek) || 
+                   (f.biweekly === 'even' && !isOddWeek);
+          }
+          
+          // 特定日付でない限り、毎週利用可能
+          return !f.date;
+        });
+        
+        if (hasFixedForThisSlot) {
+          // この時間枠が確定なら、スケジュールが空いているか確認
+          const slotKey = `${week}-${day}-${period}`;
+          const teacherSched = this.teacherSchedule.get(teacherId) || new Set();
+          
+          if (!teacherSched.has(slotKey)) {
+            console.log(`✅ ${teacher.name}の確定時間枠（${day}${period}）に配置`);
+            return teacher; // 確定条件の教師を最優先で返す
+          }
+        }
+      }
+    }
+    
+    // 確定条件を持つ教師がいない場合、通常の処理
     for (const teacherId of subject.teacherIds) {
       const teacher = this.teachers.find(t => t.id === teacherId);
       if (!teacher) continue;
@@ -760,25 +821,110 @@ export class AutoScheduleGenerator {
       const teacherSched = this.teacherSchedule.get(teacherId) || new Set();
       
       if (!teacherSched.has(slotKey) && this.checkTeacherConstraints(teacher, day, period, week)) {
-        return teacher;
+        availableTeachers.push(teacher);
       }
     }
-    return null;
+    
+    if (availableTeachers.length === 0) return null;
+    
+    // 希望条件を持つ教師を優先
+    const teachersWithWish = availableTeachers.filter(t => {
+      if (!t.constraints?.wish) return false;
+      const dayOfWeek = day as DayOfWeek;
+      const periodNum = parseInt(period.replace('限', ''));
+      return t.constraints.wish.preferredDays?.includes(dayOfWeek) ||
+             t.constraints.wish.preferredPeriods?.includes(periodNum);
+    });
+    
+    if (teachersWithWish.length > 0) {
+      return teachersWithWish[0];
+    }
+    
+    // それ以外は最初に見つかった教師
+    return availableTeachers[0];
   }
 
   private checkTeacherConstraints(teacher: Teacher, day: string, period: string, week: number): boolean {
     if (!teacher.constraints) return true;
     
     const constraints = teacher.constraints;
-    const dayOfWeek = day as any;
+    const dayOfWeek = day as DayOfWeek;
     const periodNum = parseInt(period.replace('限', ''));
     
-    // NG条件チェック
-    if (constraints.ng) {
-      if (constraints.ng.days?.includes(dayOfWeek)) return false;
-      if (constraints.ng.periods?.includes(periodNum)) return false;
+    // 1. 確定条件チェック（fixed）- 最優先
+    if (constraints.fixed && constraints.fixed.length > 0) {
+      // 毎週の確定条件（dateがないもの）があるかチェック
+      const hasWeeklyFixed = constraints.fixed.some(f => !f.date && f.dayOfWeek);
+      
+      if (hasWeeklyFixed) {
+        // この時間枠が確定条件に含まれているか
+        let isInFixedSlot = false;
+        
+        for (const fixed of constraints.fixed) {
+          if (!fixed.date && fixed.dayOfWeek === dayOfWeek && fixed.periods.includes(period)) {
+            // 週の範囲指定がある場合
+            if (fixed.startWeek !== undefined && fixed.endWeek !== undefined) {
+              if (week >= fixed.startWeek && week <= fixed.endWeek) {
+                isInFixedSlot = true;
+                break;
+              }
+            }
+            // 隔週指定がある場合
+            else if (fixed.biweekly) {
+              const isOddWeek = week % 2 === 1;
+              if ((fixed.biweekly === 'odd' && isOddWeek) || 
+                  (fixed.biweekly === 'even' && !isOddWeek)) {
+                isInFixedSlot = true;
+                break;
+              }
+            }
+            // 特定の制約がない場合は毎週利用可能
+            else {
+              isInFixedSlot = true;
+              break;
+            }
+          }
+        }
+        
+        // 毎週の確定条件がある教師は、確定時間枠以外では利用不可
+        if (!isInFixedSlot) {
+          console.log(`❌ ${teacher.name}は確定時間外（${day}${period}）のため利用不可`);
+          return false;
+        }
+      }
+      
+      // 特定日付の確定条件のチェック
+      for (const fixed of constraints.fixed) {
+        if (fixed.date) {
+          // 特定日付の確定条件は別途処理
+          continue;
+        }
+      }
     }
     
+    // 2. NG条件チェック（ng）- 絶対不可
+    if (constraints.ng) {
+      // NG曜日
+      if (constraints.ng.days?.includes(dayOfWeek)) {
+        return false;
+      }
+      // NG時限
+      if (constraints.ng.periods?.includes(periodNum)) {
+        return false;
+      }
+      // 特定時間NG（例：月曜10:00-11:00）
+      if (constraints.ng.specificTime) {
+        const st = constraints.ng.specificTime;
+        if (st.day === dayOfWeek) {
+          // 時間帯のチェック（簡易的に2限が10:40-12:10と仮定）
+          if (periodNum === 2 && st.startTime === '10:00') {
+            return false;
+          }
+        }
+      }
+    }
+    
+    // 3. レガシー制約のチェック（後方互換性）
     // 利用可能曜日チェック
     if (constraints.availableDays && !constraints.availableDays.includes(dayOfWeek)) {
       return false;
@@ -789,7 +935,7 @@ export class AutoScheduleGenerator {
       return false;
     }
     
-    // 隔週チェック
+    // 隔週チェック（wishにある場合）
     if (constraints.wish?.biweekly) {
       const isOddWeek = week % 2 === 1;
       if (constraints.wish.biweekly === 'odd' && !isOddWeek) return false;
