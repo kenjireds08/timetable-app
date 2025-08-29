@@ -88,6 +88,8 @@ const DraggableEntry = ({
   
   // 授業タイプの判定（優先順位: コンビ > 合同 > 共通 > 専門）
   const isComboClass = entry.subjectName.includes('[コンビ]') || matchingSubject?.lessonType === 'コンビ授業';
+  const isComboA = entry.subjectName.includes('[コンビA]') || matchingSubject?.comboRole === 'A';
+  const isComboB = entry.subjectName.includes('[コンビB]') || matchingSubject?.comboRole === 'B';
   const isJointClass = !isComboClass && matchingSubject?.department === '共通' && (matchingSubject?.grade === '全学年' || matchingSubject?.grade === '全学年（合同）');
   const isCommonSubject = !isComboClass && !isJointClass && matchingSubject?.department === '共通';
   const isSpecializedSubject = !isComboClass && !isJointClass && !isCommonSubject && matchingSubject?.department !== '共通';
@@ -95,7 +97,13 @@ const DraggableEntry = ({
   // CSSクラス名を決定
   let entryTypeClass = '';
   if (isComboClass) {
-    entryTypeClass = 'combo-class';
+    if (isComboA) {
+      entryTypeClass = 'combo-class combo-a';
+    } else if (isComboB) {
+      entryTypeClass = 'combo-class combo-b';
+    } else {
+      entryTypeClass = 'combo-class';
+    }
   } else if (isJointClass) {
     entryTypeClass = 'joint-class';
   } else if (isCommonSubject) {

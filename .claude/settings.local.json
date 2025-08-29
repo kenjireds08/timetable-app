@@ -51,7 +51,11 @@
       "Bash(echo:*)",
       "Read(/var/folders/qx/6_t416w11yv492lx56z4lzr00000gn/T/TemporaryItems/NSIRD_screencaptureui_qU1RtJ/**)",
       "Read(/Users/kikuchikenji/Library/Containers/at.EternalStorms.Yoink/Data/Documents/YoinkPromisedFiles.noIndex/yoinkFilePromiseCreationFolder4AF8352C-0AA6-4DBB-9DFA-828D177F020D/add4AF8352C-0AA6-4DBB-9DFA-828D177F020D/**)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git checkout:*)",
+      "Read(/Users/kikuchikenji/Library/Application Support/CleanShot/media/media_p1A466TtBm/**)",
+      "Read(/Users/kikuchikenji/Library/Application Support/CleanShot/media/media_hExE79CZDF/**)",
+      "Read(/Users/kikuchikenji/Library/Application Support/CleanShot/media/media_fqCKyXJ1Q7/**)"
     ],
     "deny": [],
     "ask": []

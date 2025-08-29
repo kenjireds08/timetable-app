@@ -2532,6 +2532,30 @@ body {
   box-shadow: 0 2px 12px rgba(245, 158, 11, 0.2);
 }
 
+/* コンビA（Essential English）のスタイル - 黄色系 */
+.semester-entry.combo-a {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  color: #92400e;
+}
+
+.semester-entry.combo-a:hover {
+  background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
+  box-shadow: 0 2px 12px rgba(245, 158, 11, 0.2);
+}
+
+/* コンビB（ビジネス日本語）のスタイル - 黄色系 */
+.semester-entry.combo-b {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  color: #92400e;
+}
+
+.semester-entry.combo-b:hover {
+  background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
+  box-shadow: 0 2px 12px rgba(245, 158, 11, 0.2);
+}
+
 /* 共通科目のスタイル */
 .semester-entry.common-class {
   background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);

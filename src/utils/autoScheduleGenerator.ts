@@ -106,6 +106,10 @@ export class AutoScheduleGenerator {
     console.log('\n🎯 Phase 2: 共通科目の同学年合同授業配置開始');
     this.placeCommonSubjectsSynchronized(groups, weeks, options, schedule);
     
+    // Phase 2.5: コンビ授業のペア同時配置（新規追加）
+    console.log('\n🎯 Phase 2.5: コンビ授業のペア同時配置開始');
+    this.placeComboPairs(groups, weeks, options, schedule);
+    
     // Phase 3: 各グループの専門科目配置
     console.log('\n🎯 Phase 3: 専門科目の個別配置開始');
     for (const group of groups) {
@@ -307,6 +311,230 @@ export class AutoScheduleGenerator {
     }
   }
 
+  /**
+   * Phase 2.5: コンビ授業のペア同時配置
+   * comboPairIdを持つ科目を確実に同じ時限に配置
+   */
+  private placeComboPairs(
+    groups: Array<{ id: string; name: string; department: string; grade: string }>,
+    weeks: number,
+    options: GenerationOptions,
+    schedule: Map<string, GeneratedEntry[]>
+  ): void {
+    // コンビペアIDを持つ科目をグループ化
+    const comboPairs = new Map<string, Subject[]>();
+    
+    for (const subject of this.subjects) {
+      if (subject.comboPairId) {
+        const existing = comboPairs.get(subject.comboPairId) || [];
+        existing.push(subject);
+        comboPairs.set(subject.comboPairId, existing);
+      }
+    }
+    
+    // 各コンビペアを処理
+    for (const [pairId, pair] of comboPairs) {
+      if (pair.length !== 2) {
+        console.warn(`⚠️ コンビペア ${pairId} が不完全です（${pair.length}科目）`);
+        continue;
+      }
+      
+      const [subjectA, subjectB] = pair;
+      const grade = subjectA.grade; // 1年 or 2年
+      const targetGroups = groups.filter(g => g.grade === grade);
+      
+      console.log(`\n🤝 コンビペア配置: ${subjectA.name} ↔ ${subjectB.name} (${grade})`);
+      
+      const totalSessions = subjectA.totalClasses || 16;
+      const weeklyDistribution = this.calculateWeeklyDistribution(totalSessions, weeks, 2);
+      let placedSessions = 0;
+      
+      // 木曜1,2限を優先的に配置
+      const prioritySlots = [
+        { day: '木', period: '1限' },
+        { day: '木', period: '2限' }
+      ];
+      
+      for (let week = 1; week <= weeks && placedSessions < totalSessions; week++) {
+        const targetSessionsThisWeek = weeklyDistribution[week - 1] || 0;
+        if (targetSessionsThisWeek === 0) continue;
+        
+        let weeklyPlaced = 0;
+        
+        // 優先スロットから試す
+        for (const slot of prioritySlots) {
+          if (weeklyPlaced >= targetSessionsThisWeek) break;
+          
+          const { day, period } = slot;
+          
+          // 両方の教師が利用可能かチェック
+          const teacherA = this.getAvailableTeacher(subjectA, week, day, period);
+          const teacherB = this.getAvailableTeacher(subjectB, week, day, period);
+          
+          if (!teacherA || !teacherB) continue;
+          
+          // 2つの異なる教室が利用可能かチェック
+          const classroomA = this.getAvailableClassroom(subjectA, week, day, period);
+          if (!classroomA) continue;
+          
+          const classroomB = this.classrooms.find(c => {
+            if (c.id === classroomA.id) return false;
+            if (!subjectB.availableClassroomIds.includes(c.id)) return false;
+            const slotKey = `${week}-${day}-${period}`;
+            const roomSchedule = this.classroomSchedule.get(c.id) || new Set();
+            return !roomSchedule.has(slotKey);
+          });
+          
+          if (!classroomB) continue;
+          
+          // 対象グループが利用可能かチェック
+          const canPlace = this.canPlaceForSpecificGroups(targetGroups, week, day, period, options.startDate);
+          if (!canPlace) continue;
+          
+          // 各グループに両方の科目を同時配置（学生が選択可能）
+          for (const group of targetGroups) {
+            const entryA: GeneratedEntry = {
+              id: `${group.id}-${subjectA.id}-${week}-${day}-${period}`,
+              timeSlot: {
+                week,
+                date: this.calculateDate(options.startDate, week, day),
+                dayOfWeek: day,
+                period
+              },
+              subjectId: subjectA.id,
+              subjectName: `${subjectA.name} [コンビA]`,
+              teacherId: teacherA.id,
+              teacherName: teacherA.name,
+              classroomId: classroomA.id,
+              classroomName: classroomA.name
+            };
+            
+            const entryB: GeneratedEntry = {
+              id: `${group.id}-${subjectB.id}-${week}-${day}-${period}`,
+              timeSlot: {
+                week,
+                date: this.calculateDate(options.startDate, week, day),
+                dayOfWeek: day,
+                period
+              },
+              subjectId: subjectB.id,
+              subjectName: `${subjectB.name} [コンビB]`,
+              teacherId: teacherB.id,
+              teacherName: teacherB.name,
+              classroomId: classroomB.id,
+              classroomName: classroomB.name
+            };
+            
+            const groupSchedule = schedule.get(group.id) || [];
+            groupSchedule.push(entryA);
+            groupSchedule.push(entryB);
+            schedule.set(group.id, groupSchedule);
+          }
+          
+          // リソースを使用済みにマーク
+          this.markSlotUsedForSpecificGroups(targetGroups, week, day, period);
+          this.addToTeacherSchedule(teacherA.id, week, day, period);
+          this.addToTeacherSchedule(teacherB.id, week, day, period);
+          this.addToClassroomSchedule(classroomA.id, week, day, period);
+          this.addToClassroomSchedule(classroomB.id, week, day, period);
+          
+          weeklyPlaced++;
+          placedSessions++;
+          
+          console.log(`✅ 第${week}週 ${day}曜${period}: ${subjectA.name} & ${subjectB.name} 同時配置成功`);
+        }
+        
+        // 優先スロットで不足の場合、他の時限も試す
+        if (weeklyPlaced < targetSessionsThisWeek) {
+          const otherDays = ['火', '水', '金', '月'];
+          const otherPeriods = ['1限', '2限', '3限', '4限'];
+          
+          for (const day of otherDays) {
+            if (weeklyPlaced >= targetSessionsThisWeek) break;
+            
+            for (const period of otherPeriods) {
+              if (weeklyPlaced >= targetSessionsThisWeek) break;
+              
+              // 同様の配置ロジック（省略のため詳細は上記と同じ）
+              const teacherA = this.getAvailableTeacher(subjectA, week, day, period);
+              const teacherB = this.getAvailableTeacher(subjectB, week, day, period);
+              
+              if (!teacherA || !teacherB) continue;
+              
+              const classroomA = this.getAvailableClassroom(subjectA, week, day, period);
+              if (!classroomA) continue;
+              
+              const classroomB = this.classrooms.find(c => {
+                if (c.id === classroomA.id) return false;
+                if (!subjectB.availableClassroomIds.includes(c.id)) return false;
+                const slotKey = `${week}-${day}-${period}`;
+                const roomSchedule = this.classroomSchedule.get(c.id) || new Set();
+                return !roomSchedule.has(slotKey);
+              });
+              
+              if (!classroomB) continue;
+              
+              const canPlace = this.canPlaceForSpecificGroups(targetGroups, week, day, period, options.startDate);
+              if (!canPlace) continue;
+              
+              for (const group of targetGroups) {
+                const entryA: GeneratedEntry = {
+                  id: `${group.id}-${subjectA.id}-${week}-${day}-${period}`,
+                  timeSlot: {
+                    week,
+                    date: this.calculateDate(options.startDate, week, day),
+                    dayOfWeek: day,
+                    period
+                  },
+                  subjectId: subjectA.id,
+                  subjectName: `${subjectA.name} [コンビA]`,
+                  teacherId: teacherA.id,
+                  teacherName: teacherA.name,
+                  classroomId: classroomA.id,
+                  classroomName: classroomA.name
+                };
+                
+                const entryB: GeneratedEntry = {
+                  id: `${group.id}-${subjectB.id}-${week}-${day}-${period}`,
+                  timeSlot: {
+                    week,
+                    date: this.calculateDate(options.startDate, week, day),
+                    dayOfWeek: day,
+                    period
+                  },
+                  subjectId: subjectB.id,
+                  subjectName: `${subjectB.name} [コンビB]`,
+                  teacherId: teacherB.id,
+                  teacherName: teacherB.name,
+                  classroomId: classroomB.id,
+                  classroomName: classroomB.name
+                };
+                
+                const groupSchedule = schedule.get(group.id) || [];
+                groupSchedule.push(entryA);
+                groupSchedule.push(entryB);
+                schedule.set(group.id, groupSchedule);
+              }
+              
+              this.markSlotUsedForSpecificGroups(targetGroups, week, day, period);
+              this.addToTeacherSchedule(teacherA.id, week, day, period);
+              this.addToTeacherSchedule(teacherB.id, week, day, period);
+              this.addToClassroomSchedule(classroomA.id, week, day, period);
+              this.addToClassroomSchedule(classroomB.id, week, day, period);
+              
+              weeklyPlaced++;
+              placedSessions++;
+              
+              console.log(`✅ 第${week}週 ${day}曜${period}: ${subjectA.name} & ${subjectB.name} 同時配置成功`);
+            }
+          }
+        }
+      }
+      
+      console.log(`📊 ${subjectA.name} & ${subjectB.name}: ${placedSessions}/${totalSessions}コマ配置完了`);
+    }
+  }
+
   private placeCommonSubjectsSynchronized(
     groups: Array<{ id: string; name: string; department: string; grade: string }>,
     weeks: number,
@@ -343,9 +571,9 @@ export class AutoScheduleGenerator {
           continue;
         }
         
-        // コンビ授業の場合、既に処理済みならスキップ
-        if (subject.lessonType === 'コンビ授業' && processedComboSubjects.has(subject.id)) {
-          console.log(`⏩ ${subject.name}は既にコンビで処理済み`);
+        // コンビ授業の場合はPhase 2.5で処理するためスキップ
+        if (subject.lessonType === 'コンビ授業' || subject.comboPairId) {
+          console.log(`⏩ ${subject.name}はPhase 2.5（コンビ授業専用フェーズ）で処理`);
           continue;
         }
         
@@ -672,6 +900,9 @@ export class AutoScheduleGenerator {
     startDate: string,
     schedule: Map<string, GeneratedEntry[]>
   ): boolean {
+    // コンビ授業は同じ時限に両方の科目を配置する必要がある
+    // 各グループ（IT1年、TD1年など）が選択できるように同時配置
+    
     // 両方の教師が利用可能かチェック
     const teacher1 = this.getAvailableTeacher(subject1, week, day, period);
     const teacher2 = this.getAvailableTeacher(subject2, week, day, period);
@@ -680,12 +911,18 @@ export class AutoScheduleGenerator {
       return false;
     }
     
-    // 2つの教室が利用可能かチェック
+    // 異なる2つの教室が利用可能かチェック
+    const availableClassrooms: Classroom[] = [];
+    
+    // subject1用の教室を探す
     const classroom1 = this.getAvailableClassroom(subject1, week, day, period);
     if (!classroom1) return false;
+    availableClassrooms.push(classroom1);
     
+    // subject2用の別の教室を探す（classroom1とは異なる）
     const classroom2 = this.classrooms.find(c => {
       if (c.id === classroom1.id) return false;
+      if (!subject2.availableClassroomIds.includes(c.id)) return false;
       const slotKey = `${week}-${day}-${period}`;
       const roomSchedule = this.classroomSchedule.get(c.id) || new Set();
       return !roomSchedule.has(slotKey);
@@ -693,52 +930,48 @@ export class AutoScheduleGenerator {
     
     if (!classroom2) return false;
     
-    // グループを2つに分けて配置
-    const group1 = groups[0];
-    const group2 = groups[1] || groups[0]; // 1グループしかない場合の処理
-    
-    // グループ1にsubject1を配置
-    const entry1: GeneratedEntry = {
-      id: `${group1.id}-${subject1.id}-${week}-${day}-${period}`,
-      timeSlot: {
-        week,
-        date: this.calculateDate(startDate, week, day),
-        dayOfWeek: day,
-        period
-      },
-      subjectId: subject1.id,
-      subjectName: `${subject1.name} [コンビ]`,
-      teacherId: teacher1.id,
-      teacherName: teacher1.name,
-      classroomId: classroom1.id,
-      classroomName: classroom1.name
-    };
-    
-    // グループ2にsubject2を配置
-    const entry2: GeneratedEntry = {
-      id: `${group2.id}-${subject2.id}-${week}-${day}-${period}`,
-      timeSlot: {
-        week,
-        date: this.calculateDate(startDate, week, day),
-        dayOfWeek: day,
-        period
-      },
-      subjectId: subject2.id,
-      subjectName: `${subject2.name} [コンビ]`,
-      teacherId: teacher2.id,
-      teacherName: teacher2.name,
-      classroomId: classroom2.id,
-      classroomName: classroom2.name
-    };
-    
-    // スケジュールに追加
-    const schedule1 = schedule.get(group1.id) || [];
-    schedule1.push(entry1);
-    schedule.set(group1.id, schedule1);
-    
-    const schedule2 = schedule.get(group2.id) || [];
-    schedule2.push(entry2);
-    schedule.set(group2.id, schedule2);
+    // 全グループに両方の科目を同時に配置（学生が選択可能）
+    for (const group of groups) {
+      // Essential English を配置
+      const entry1: GeneratedEntry = {
+        id: `${group.id}-${subject1.id}-${week}-${day}-${period}`,
+        timeSlot: {
+          week,
+          date: this.calculateDate(startDate, week, day),
+          dayOfWeek: day,
+          period
+        },
+        subjectId: subject1.id,
+        subjectName: `${subject1.name} [コンビA]`,
+        teacherId: teacher1.id,
+        teacherName: teacher1.name,
+        classroomId: classroom1.id,
+        classroomName: classroom1.name
+      };
+      
+      // ビジネス日本語を配置（同じ時限）
+      const entry2: GeneratedEntry = {
+        id: `${group.id}-${subject2.id}-${week}-${day}-${period}`,
+        timeSlot: {
+          week,
+          date: this.calculateDate(startDate, week, day),
+          dayOfWeek: day,
+          period
+        },
+        subjectId: subject2.id,
+        subjectName: `${subject2.name} [コンビB]`,
+        teacherId: teacher2.id,
+        teacherName: teacher2.name,
+        classroomId: classroom2.id,
+        classroomName: classroom2.name
+      };
+      
+      // スケジュールに両方追加（同じグループ、同じ時限）
+      const groupSchedule = schedule.get(group.id) || [];
+      groupSchedule.push(entry1);
+      groupSchedule.push(entry2);
+      schedule.set(group.id, groupSchedule);
+    }
     
     // スロットを使用中にマーク
     this.markSlotUsedForSpecificGroups(groups, week, day, period);

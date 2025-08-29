@@ -1,0 +1,612 @@
+import { useState, useEffect } from 'react';
+import type { Subject, Department, Grade, LessonType, Teacher, Classroom } from '../types';
+import { Plus, Edit2 as Edit, Trash2, Save, X, CheckCircle, AlertCircle, Clock, BookOpen } from 'lucide-react';
+
+interface SubjectProgressInfo {
+  subjectId: string;
+  totalRequired: number;
+  scheduledCount: number;
+  completionRate: number;
+  missingFromGroups: string[];
+  failureReasons?: string[]; // 配置失敗の理由を追加
+}
+
+interface SubjectManagerProps {
+  subjects: Subject[];
+  teachers: Teacher[];
+  classrooms: Classroom[];
+  onAdd: (subject: Subject) => void;
+  onUpdate: (subject: Subject) => void;
+  onDelete: (id: string) => void;
+}
+
+export const SubjectManager: React.FC<SubjectManagerProps> = ({ 
+  subjects, 
+  teachers, 
+  classrooms,
+  onAdd,
+  onUpdate,
+  onDelete
+}) => {
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [semesterData, setSemesterData] = useState<any>(null);
+  const [subjectProgress, setSubjectProgress] = useState<Map<string, SubjectProgressInfo>>(new Map());
+  const [formData, setFormData] = useState<Partial<Subject>>({
+    name: '',
+    teacherIds: [],
+    department: 'ITソリューション',
+    grade: '1年',
+    totalClasses: 16,
+    lessonType: '通常',
+    availableClassroomIds: []
+  });
+
+  // 学期データの読み込み（初回のみ）
+  useEffect(() => {
+    const loadSemesterData = async () => {
+      try {
+        const response = await fetch('/semester_schedule.json');
+        if (response.ok) {
+          const data = await response.json();
+          setSemesterData(data);
+          console.log('📊 学期データ読み込み成功:', {
+            groups: Object.keys(data.groups || {}),
+            weeks: data.weeks?.length || 0
+          });
+        } else {
+          console.warn('⚠️ 学期データファイルが見つかりません');
+        }
+      } catch (error) {
+        console.error('❌ 学期データ読み込みエラー:', error);
+      }
+    };
+
+    loadSemesterData();
+  }, []);
+
+  // 失敗理由の詳細を分析する関数
+  const analyzeDetailedFailureReasons = (subject: Subject, semesterData: any): FailureReason[] => {
+    const reasons: FailureReason[] = [];
+    const targetGroups = getTargetGroups(subject);
+    
+    // 教師制約の確認
+    subject.teacherIds.forEach(teacherId => {
+      const teacher = teachers.find(t => t.id === teacherId);
+      if (teacher?.constraints) {
+        if (teacher.constraints.maxClassesPerDay && teacher.constraints.maxClassesPerDay < 2) {
+          reasons.push({
+            type: 'teacher_constraint',
+            message: `${teacher.name}先生の1日最大授業数制限（${teacher.constraints.maxClassesPerDay}コマ）`
+          });
+        }
+        if (teacher.constraints.unavailableDays?.length > 3) {
+          reasons.push({
+            type: 'teacher_constraint',
+            message: `${teacher.name}先生の利用不可日が多い（${teacher.constraints.unavailableDays.join(', ')}）`
+          });
+        }
+      }
+    });
+
+    // 教室制約の確認
+    if (subject.availableClassroomIds.length === 1) {
+      const classroom = classrooms.find(c => c.id === subject.availableClassroomIds[0]);
+      if (classroom) {
+        reasons.push({
+          type: 'classroom_constraint',
+          message: `教室が${classroom.name}のみに限定されている`
+        });
+      }
+    }
+
+    // コンビ授業の確認
+    if (subject.lessonType === 'コンビ授業') {
+      reasons.push({
+        type: 'combo_constraint',
+        message: 'コンビ授業のため同時間帯に配置が必要'
+      });
+    }
+
+    // 合同授業の確認
+    if (subject.lessonType === '合同' && targetGroups.length > 2) {
+      reasons.push({
+        type: 'joint_constraint',
+        message: `${targetGroups.length}グループの合同授業で調整が複雑`
+      });
+    }
+
+    return reasons;
+  };
+
+  // 失敗理由の分析関数（シンプル版）
+  const analyzeFailureReasons = analyzeDetailedFailureReasons;
+
+  // 科目の進捗状況を計算
+  const calculateSubjectProgress = (subject: Subject, semesterData: any): SubjectProgressInfo => {
+    if (!semesterData?.groups) {
+      return {
+        subjectId: subject.id,
+        totalRequired: subject.totalClasses,
+        scheduledCount: 0,
+        completionRate: 0,
+        missingFromGroups: []
+      };
+    }
+
+    const targetGroups = getTargetGroups(subject);
+    let totalScheduled = 0;
+    const missingFromGroups: string[] = [];
+
+    // 各グループでのスケジュール数を収集
+    const groupScheduleCounts: number[] = [];
+    
+    targetGroups.forEach(groupKey => {
+      const group = semesterData.groups[groupKey];
+      if (group) {
+        const scheduledInGroup = group.schedule.filter((entry: any) => {
+          // タグを除外した科目名で比較
+          const cleanEntryName = entry.subjectName
+            .replace(' [コンビ]', '')
+            .replace(' [共通]', '')
+            .replace(' [合同]', '')
+            .replace(' [専門]', '');
+          
+          // ローマ数字の正規化も追加
+          const normalizeRoman = (name: string) => {
+            return name
+              .replace(/\sI$/, ' Ⅰ')
+              .replace(/\sII$/, ' Ⅱ')
+              .replace(/\sIII$/, ' Ⅲ')
+              .replace(/\sⅠ$/, ' I')
+              .replace(/\sⅡ$/, ' II')
+              .replace(/\sⅢ$/, ' III');
+          };
+          
+          const normalizedEntry = normalizeRoman(cleanEntryName);
+          const normalizedSubject = normalizeRoman(subject.name);
+          
+          // 3つのマッチング方法：
+          // 1. タグを除外した正規化後の名前が一致
+          // 2. subjectIdが一致
+          // 3. 元の名前が完全一致（下位互換性のため）
+          const isMatch = normalizedEntry === normalizedSubject || 
+                         entry.subjectId === subject.id ||
+                         cleanEntryName === subject.name;
+          
+          if (isMatch && entry.subjectName !== subject.name) {
+            console.log(`✅ 科目管理マッチ: "${entry.subjectName}" → "${subject.name}"`);
+          }
+          
+          return isMatch;
+        }).length;
+        
+        if (scheduledInGroup === 0) {
+          missingFromGroups.push(group.name);
+        }
+        
+        groupScheduleCounts.push(scheduledInGroup);
+      }
+    });
+
+    // 科目の種類に応じて総スケジュール数を計算
+    if (subject.department === '共通' && subject.lessonType === '合同') {
+      // 全学年合同の場合、すべてのグループで同じ授業が実施されるので、最大値を取る
+      totalScheduled = Math.max(...groupScheduleCounts, 0);
+    } else if (subject.department === '共通') {
+      // 共通科目の場合、同学年の複数学科で同じ授業が実施されるので、最大値を取る
+      totalScheduled = Math.max(...groupScheduleCounts, 0);
+    } else {
+      // 学科別科目の場合、単純に合計
+      totalScheduled = groupScheduleCounts.reduce((sum, count) => sum + count, 0);
+    }
+
+    const completionRate = subject.totalClasses > 0 ? (totalScheduled / subject.totalClasses) * 100 : 0;
+    
+    // 未完了の場合、失敗理由を分析
+    const failureReasons = completionRate < 100 ? analyzeFailureReasons(subject, semesterData) : [];
+
+    return {
+      subjectId: subject.id,
+      totalRequired: subject.totalClasses,
+      scheduledCount: totalScheduled,
+      completionRate: Math.min(completionRate, 100),
+      missingFromGroups,
+      failureReasons
+    };
+  };
+
+  // 対象グループを取得
+  const getTargetGroups = (subject: Subject): string[] => {
+    const groups: string[] = [];
+    
+    if (subject.department === '共通' || subject.grade === '全学年' || subject.grade === '全学年（合同）') {
+      // 共通科目または全学年対象の場合
+      if (subject.grade === '1年') {
+        groups.push('IT1', 'TD1');
+      } else if (subject.grade === '2年') {
+        groups.push('IT2', 'TD2');
+      } else {
+        groups.push('IT1', 'IT2', 'TD1', 'TD2');
+      }
+    } else if (subject.department === 'ITソリューション') {
+      if (subject.grade === '1年') groups.push('IT1');
+      if (subject.grade === '2年') groups.push('IT2');
+    } else if (subject.department === '地域観光デザイン') {
+      if (subject.grade === '1年') groups.push('TD1');
+      if (subject.grade === '2年') groups.push('TD2');
+      if (subject.grade === '全学年（合同）') groups.push('TD1', 'TD2');
+    }
+    
+    return groups;
+  };
+
+  const handleSubmit = () => {
+    if (!formData.name || !formData.teacherIds?.length || !formData.availableClassroomIds?.length) {
+      alert('科目名、教師、教室は必須項目です');
+      return;
+    }
+
+    if (editingId) {
+      onUpdate(editingId, formData as Subject);
+      setEditingId(null);
+    } else {
+      const newSubject: Subject = {
+        ...formData as Subject,
+        id: `s${Date.now()}`
+      };
+      onAdd(newSubject);
+      setIsAdding(false);
+    }
+
+    setFormData({
+      name: '',
+      teacherIds: [],
+      department: 'ITソリューション',
+      grade: '1年',
+      totalClasses: 16,
+      lessonType: '通常',
+      availableClassroomIds: []
+    });
+  };
+
+  const handleEdit = (subject: Subject) => {
+    setFormData(subject);
+    setEditingId(subject.id);
+    setIsAdding(false);
+  };
+
+  const handleCancel = () => {
+    setIsAdding(false);
+    setEditingId(null);
+    setFormData({
+      name: '',
+      teacherIds: [],
+      department: 'ITソリューション',
+      grade: '1年',
+      totalClasses: 16,
+      lessonType: '通常',
+      availableClassroomIds: []
+    });
+  };
+
+  // 学期データが更新されたら進捗を計算
+  useEffect(() => {
+    if (semesterData && subjects.length > 0) {
+      const progressMap = new Map<string, SubjectProgressInfo>();
+      
+      subjects.forEach(subject => {
+        const progress = calculateSubjectProgress(subject, semesterData);
+        progressMap.set(subject.id, progress);
+        
+        // デバッグ用ログ
+        if (progress.scheduledCount > 0) {
+          console.log(`📚 ${subject.name}: ${progress.scheduledCount}/${progress.totalRequired}コマ (${Math.round(progress.completionRate)}%)`);
+        }
+      });
+      
+      setSubjectProgress(progressMap);
+    }
+  }, [semesterData, subjects]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold text-gray-900">
+          科目管理 ({subjects.length}科目)
+        </h3>
+        <button
+          onClick={() => setIsAdding(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-5 h-5 inline mr-2" />
+          新規科目追加
+        </button>
+      </div>
+
+      {(isAdding || editingId) && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h4 className="text-md font-semibold mb-4">
+            {editingId ? '科目編集' : '新規科目追加'}
+          </h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                科目名 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.name || ''}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="例: プログラミング基礎"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                学科
+              </label>
+              <select
+                value={formData.department || 'ITソリューション'}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value as Subject['department'] })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="ITソリューション">ITソリューション</option>
+                <option value="地域観光デザイン">地域観光デザイン</option>
+                <option value="共通">共通</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                対象学年
+              </label>
+              <select
+                value={formData.grade || '1年'}
+                onChange={(e) => setFormData({ ...formData, grade: e.target.value as Subject['grade'] })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="1年">1年</option>
+                <option value="2年">2年</option>
+                <option value="全学年">全学年</option>
+                <option value="全学年（合同）">全学年（合同）</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                授業形態
+              </label>
+              <select
+                value={formData.lessonType || '通常'}
+                onChange={(e) => setFormData({ ...formData, lessonType: e.target.value as Subject['lessonType'] })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="通常">通常</option>
+                <option value="コンビ授業">コンビ授業</option>
+                <option value="合同">合同</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                総コマ数
+              </label>
+              <input
+                type="number"
+                value={formData.totalClasses || 16}
+                onChange={(e) => setFormData({ ...formData, totalClasses: parseInt(e.target.value) || 0 })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                min="1"
+                max="64"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                担当教師 <span className="text-red-500">*</span>
+              </label>
+              <select
+                multiple
+                value={formData.teacherIds || []}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions, option => option.value);
+                  setFormData({ ...formData, teacherIds: selected });
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                size={3}
+              >
+                {teachers.map(teacher => (
+                  <option key={teacher.id} value={teacher.id}>
+                    {teacher.name} ({teacher.type})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">Ctrl/Cmd+クリックで複数選択</p>
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                利用可能教室 <span className="text-red-500">*</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {classrooms.map(classroom => (
+                  <label key={classroom.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      value={classroom.id}
+                      checked={formData.availableClassroomIds?.includes(classroom.id) || false}
+                      onChange={(e) => {
+                        const classroomId = e.target.value;
+                        const currentIds = formData.availableClassroomIds || [];
+                        if (e.target.checked) {
+                          setFormData({ ...formData, availableClassroomIds: [...currentIds, classroomId] });
+                        } else {
+                          setFormData({ ...formData, availableClassroomIds: currentIds.filter(id => id !== classroomId) });
+                        }
+                      }}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">{classroom.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                特記事項
+              </label>
+              <textarea
+                value={formData.specialRequirements || ''}
+                onChange={(e) => setFormData({ ...formData, specialRequirements: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                rows={2}
+                placeholder="特別な要件や制約があれば記入"
+              />
+            </div>
+
+            <div className="col-span-2 flex justify-end gap-2">
+              <button
+                onClick={handleCancel}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                {editingId ? '更新' : '追加'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">科目名</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">学科</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">学年</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">担当教師</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">進捗状況</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">授業形態</th>
+              <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">操作</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {subjects.map(subject => {
+              const progress = subjectProgress.get(subject.id);
+              const isEmpty = !progress || progress.scheduledCount === 0;
+              
+              return (
+                <tr key={subject.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-gray-900">{subject.name}</div>
+                    {subject.specialRequirements && (
+                      <div className="text-xs text-gray-500 mt-1">{subject.specialRequirements}</div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-700">
+                    {subject.department}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-700">
+                    {subject.grade}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-700">
+                    {subject.teacherIds.map(id => 
+                      teachers.find(t => t.id === id)?.name
+                    ).filter(Boolean).join(', ')}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          {progress?.scheduledCount || 0}/{progress?.totalRequired || subject.totalClasses}コマ ({Math.round(progress?.completionRate || 0)}%)
+                        </div>
+                        <div className="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full transition-all ${
+                              isEmpty ? 'bg-red-500' : 
+                              progress?.completionRate === 100 ? 'bg-green-500' : 'bg-yellow-500'
+                            }`}
+                            style={{ width: `${progress?.completionRate || 0}%` }}
+                          />
+                        </div>
+                        {isEmpty && (
+                          <div className="text-xs text-red-600 mt-1">
+                            ⚠️ 未スケジュール
+                          </div>
+                        )}
+                        {progress?.missingFromGroups && progress.missingFromGroups.length > 0 && (
+                          <div className="text-xs text-orange-600 mt-1">
+                            不足: {progress.missingFromGroups.join(', ')}
+                          </div>
+                        )}
+                        {progress?.failureReasons && progress.failureReasons.length > 0 && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {progress.failureReasons.map((reason, idx) => (
+                              <div key={idx}>• {reason.message}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                      subject.lessonType === '合同' ? 'bg-purple-100 text-purple-800' :
+                      subject.lessonType === 'コンビ授業' ? 'bg-orange-100 text-orange-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {subject.lessonType}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="flex justify-center gap-2">
+                      <button
+                        onClick={() => handleEdit(subject)}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                        title="編集"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`「${subject.name}」を削除してもよろしいですか？`)) {
+                            onDelete(subject.id);
+                          }
+                        }}
+                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                        title="削除"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {subjects.length === 0 && (
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <p className="text-gray-500">科目が登録されていません</p>
+          <button
+            onClick={() => setIsAdding(true)}
+            className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            最初の科目を追加
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};

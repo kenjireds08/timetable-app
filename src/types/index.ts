@@ -146,6 +146,8 @@ export interface Subject {
   availableClassroomIds: string[];
   comboSubjectId?: string;
   comboSubjectName?: string;
+  comboPairId?: string;     // コンビ授業のペアID（同じIDを持つ科目が同時配置される）
+  comboRole?: 'A' | 'B';    // コンビ授業での役割（A/B）
   sequenceGroup?: string;
   specialRequirements?: string;
   placementFailures?: PlacementFailure[];

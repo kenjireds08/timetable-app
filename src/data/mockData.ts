@@ -440,6 +440,8 @@ export const mockSubjects: Subject[] = [
     availableClassroomIds: ['c1', 'c4', 'c5'],  // たかねこ、ICT1、ICT2
     comboSubjectId: 's7',
     comboSubjectName: 'ビジネス日本語 I',
+    comboPairId: 'combo-EE1-BJ1',
+    comboRole: 'A',
     specialRequirements: '※裏表の授業（コンビ授業）、木曜1,2限'
   },
   {
@@ -453,6 +455,8 @@ export const mockSubjects: Subject[] = [
     availableClassroomIds: ['c2', 'c3', 'c4', 'c5'],  // しらかわ、なか、ICT1、ICT2
     comboSubjectId: 's8',
     comboSubjectName: 'ビジネス日本語 II',
+    comboPairId: 'combo-EE2-BJ2',
+    comboRole: 'A',
     specialRequirements: '※裏表の授業（コンビ授業）、木曜1,2限'
   },
   {
@@ -466,6 +470,8 @@ export const mockSubjects: Subject[] = [
     availableClassroomIds: ['c2', 'c3', 'c4', 'c5'],  // しらかわ、なか、ICT1、ICT2
     comboSubjectId: 's5',
     comboSubjectName: 'Essential English I',
+    comboPairId: 'combo-EE1-BJ1',
+    comboRole: 'B',
     specialRequirements: '※裏表の授業（コンビ授業）'
   },
   {
@@ -477,6 +483,8 @@ export const mockSubjects: Subject[] = [
     totalClasses: 16,
     lessonType: 'コンビ授業',
     availableClassroomIds: ['c2', 'c3', 'c4', 'c5'],  // しらかわ、なか、ICT1、ICT2
+    comboPairId: 'combo-EE2-BJ2',
+    comboRole: 'B',
     comboSubjectId: 's6',
     comboSubjectName: 'Essential English II',
     specialRequirements: '※裏表の授業（コンビ授業）、木曜1限'
