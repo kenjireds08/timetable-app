@@ -63,6 +63,25 @@ const SubjectManager = ({
     };
 
     loadSemesterData();
+    
+    // LocalStorageの変更を監視
+    const handleStorageChange = () => {
+      loadSemesterData();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // タブがフォーカスされたときも再読み込み
+    const handleFocus = () => {
+      loadSemesterData();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   // 科目の進捗状況を計算
@@ -158,12 +177,28 @@ const SubjectManager = ({
     targetGroups.forEach(groupKey => {
       const group = semesterData.groups[groupKey];
       if (group) {
+        // Fiona先生の科目のデバッグ
+        if (subject.name.includes('Active Communication')) {
+          console.log(`🔍 Checking ${subject.name} in group ${groupKey}:`, {
+            groupExists: !!group,
+            scheduleLength: group.schedule?.length || 0,
+            firstFewEntries: group.schedule?.slice(0, 3).map((e: any) => ({
+              subjectName: e.subjectName,
+              subjectId: e.subjectId,
+              week: e.week
+            }))
+          });
+        }
+        
         const scheduledInGroup = group.schedule.filter((entry: any) => {
           // 科目名の正確なマッチング（全てのタグを考慮）
-          const cleanEntryName = entry.subjectName
+          const cleanEntryName = (entry.subjectName || '')
             .replace(' [コンビ]', '')
             .replace(' [共通]', '')
-            .replace(' [合同]', '');
+            .replace(' [合同]', '')
+            .replace(' [13:15開始]', '')
+            .replace(' [補填75分]', '')
+            .replace(' [補填90分]', '');
           const cleanSubjectName = subject.name
             .replace(' [コンビ]', '')
             .replace(' [共通]', '')
@@ -186,6 +221,21 @@ const SubjectManager = ({
           const isMatch = normalizedEntry === normalizedSubject || 
                          entry.subjectName === subject.name || 
                          entry.subjectId === subject.id;
+          
+          // Fiona先生の科目の詳細デバッグ
+          if (subject.name.includes('Active Communication') && entry.subjectName?.includes('Active Communication')) {
+            console.log(`🎯 Active Communication比較:`, {
+              entryName: entry.subjectName,
+              subjectName: subject.name,
+              cleanEntry: cleanEntryName,
+              cleanSubject: cleanSubjectName,
+              normalizedEntry,
+              normalizedSubject,
+              isMatch,
+              subjectId: subject.id,
+              entrySubjectId: entry.subjectId
+            });
+          }
           
           if (isMatch) {
             console.log(`✅ 科目管理マッチ: "${entry.subjectName}" → "${subject.name}"`);
@@ -233,20 +283,21 @@ const SubjectManager = ({
   const getTargetGroups = (subject: Subject): string[] => {
     if (subject.department === '共通' && subject.lessonType === '合同') {
       // 全学年合同の場合、すべてのグループ
-      return ['it-1', 'it-2', 'tourism-1', 'tourism-2'];
+      return ['it-1', 'it-2', 'design-1', 'design-2'];
     } else if (subject.department === '共通') {
       // 共通科目の場合、同学年の両学科
       if (subject.grade === '1年') {
-        return ['it-1', 'tourism-1'];
+        return ['it-1', 'design-1'];
       } else {
-        return ['it-2', 'tourism-2'];
+        return ['it-2', 'design-2'];
       }
     } else {
       // 学科別科目の場合
       if (subject.department === 'ITソリューション') {
         return subject.grade === '1年' ? ['it-1'] : ['it-2'];
       } else {
-        return subject.grade === '1年' ? ['tourism-1'] : ['tourism-2'];
+        // 地域観光デザインの場合
+        return subject.grade === '1年' ? ['design-1'] : ['design-2'];
       }
     }
   };

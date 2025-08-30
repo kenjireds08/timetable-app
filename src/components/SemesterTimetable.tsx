@@ -101,16 +101,24 @@ const DraggableEntry = ({
   const isCommonSubject = !isComboClass && !isJointClass && matchingSubject?.department === '共通';
   const isSpecializedSubject = !isComboClass && !isJointClass && !isCommonSubject && matchingSubject?.department !== '共通';
   
-  // CSSクラス名を決定
+  // CSSクラス名を決定（修正版：全学年合同の判定を追加）
   let entryTypeClass = '';
-  if (isComboClass) {
-    entryTypeClass = 'combo-class';
-  } else if (isJointClass) {
-    entryTypeClass = 'joint-class';
-  } else if (isCommonSubject) {
-    entryTypeClass = 'common-class';
-  } else if (isSpecializedSubject) {
-    entryTypeClass = 'specialized-class';
+  
+  // 全学年合同授業を最優先でチェック
+  const isAllGradesJoint = entry.subjectName.includes('[全学年合同]') || 
+                           entry.subjectName.includes('クリエイティブコミュニケーションラボ') ||
+                           entry.subjectName.includes('Creative Communication Lab');
+  
+  if (isAllGradesJoint) {
+    entryTypeClass = 'joint-class'; // 紫色のクラス
+  } else if (isComboClass) {
+    entryTypeClass = 'combo-class'; // 黄色のクラス
+  } else if (isCommonSubject || 
+             entry.subjectName.includes('デザインとプレゼンテーション') ||
+             entry.subjectName.includes('Active Communication')) {
+    entryTypeClass = 'common-class'; // 青色のクラス
+  } else {
+    entryTypeClass = 'specialized-class'; // 緑色のクラス
   }
   
   return (
@@ -124,10 +132,10 @@ const DraggableEntry = ({
     >
       <div className="entry-header">
         <div className="entry-subject">
-          {isComboClass && <span className="combo-indicator">🤝</span>}
-          {isJointClass && <span className="joint-indicator">🎓</span>}
-          {isCommonSubject && <span className="common-indicator">📚</span>}
-          {isSpecializedSubject && <span className="specialized-indicator">⚙️</span>}
+          {isAllGradesJoint && <span className="joint-indicator">🎓</span>}
+          {!isAllGradesJoint && isComboClass && <span className="combo-indicator">🤝</span>}
+          {!isAllGradesJoint && !isComboClass && isCommonSubject && <span className="common-indicator">📚</span>}
+          {!isAllGradesJoint && !isComboClass && !isCommonSubject && <span className="specialized-indicator">⚙️</span>}
           <span className="subject-name">{entry.subjectName}</span>
           {progressInfo && (
             <span className="entry-progress">({progressInfo.current}/{progressInfo.total})</span>

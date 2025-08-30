@@ -71,7 +71,10 @@
       "Bash(git stash:*)",
       "Read(/var/folders/qx/6_t416w11yv492lx56z4lzr00000gn/T/TemporaryItems/NSIRD_screencaptureui_EijSVF/**)",
       "Read(/Users/kikuchikenji/Library/Application Support/CleanShot/media/media_jd5G2LDBql/**)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(open http://localhost:5173/)",
+      "Read(/Users/kikuchikenji/Library/Application Support/CleanShot/media/media_CWDtnWkzgc/**)",
+      "Read(/var/folders/qx/6_t416w11yv492lx56z4lzr00000gn/T/TemporaryItems/NSIRD_screencaptureui_H7hYjl/**)"
     ],
     "deny": [],
     "ask": []

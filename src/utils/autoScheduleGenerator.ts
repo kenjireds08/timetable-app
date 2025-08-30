@@ -126,6 +126,18 @@ export class AutoScheduleGenerator {
     console.log('\n🎯 Phase 2.7: 森田典子先生の進級制作・卒業制作配置');
     this.placeMoritaProjects(groups, weeks, options, schedule);
     
+    // Phase 2.8: Fiona先生のActive Communication in English I/II配置
+    console.log('\n🎯 Phase 2.8: Fiona先生のActive Communication in English I/II配置');
+    this.placeFionaEnglish(groups, weeks, options, schedule);
+    
+    // Phase 2.9: Lee先生のBusiness English I/II配置
+    console.log('\n🎯 Phase 2.9: Lee先生のBusiness English I/II配置');
+    this.placeLeeBusinessEnglish(groups, weeks, options, schedule);
+    
+    // Phase 2.10: Creative Communication Lab（鈴木・宮嵜共同授業）配置
+    console.log('\n🎯 Phase 2.10: Creative Communication Lab（鈴木・宮嵜共同授業）配置');
+    this.placeCreativeCommunicationLab(schedule, groups, weeks, options);
+    
     // Phase 3: 各グループの専門科目配置 - 今回はスキップ
     // console.log('\n🎯 Phase 3: 専門科目の個別配置開始');
     // for (const group of groups) {
@@ -1012,87 +1024,78 @@ export class AutoScheduleGenerator {
     
     console.log(`📚 進級制作: ${advancedProject.totalClasses}コマ`);
     console.log(`📚 卒業制作: ${graduationProject.totalClasses}コマ`);
+    console.log(`⚠️ 制約: 1限NG、火曜・水曜可、進級制作と卒業制作は同じ日程希望`);
     
     const it1Schedule = schedule.get(it1Group.id) || [];
     const it2Schedule = schedule.get(it2Group.id) || [];
     
-    let placedCount = 0;
-    const targetCount = advancedProject.totalClasses; // 進級制作のコマ数（16コマ）
+    let placedAdvancedCount = 0;
+    let placedGraduationTueCount = 0;
+    let placedGraduationWedCount = 0;
+    const targetAdvanced = advancedProject.totalClasses; // 進級制作のコマ数（16コマ）
+    const targetGraduation = graduationProject.totalClasses; // 卒業制作のコマ数（32コマ）
     
-    // 各週を巡回して水曜日または火曜日に配置
-    for (let week = 1; week <= weeks && placedCount < targetCount; week++) {
+    // 火曜日に優先的に配置（進級制作2限、卒業制作3限で同じ日程を実現）
+    for (let week = 1; week <= weeks && (placedAdvancedCount < targetAdvanced || placedGraduationTueCount < 16); week++) {
       const weekStart = new Date(options.startDate);
       weekStart.setDate(weekStart.getDate() + (week - 1) * 7);
       
-      // 水曜日を優先、次に火曜日を試す
-      const daysToTry = [
-        { day: '水', index: 2 },
-        { day: '火', index: 1 }
-      ];
+      // 火曜日（index: 1）
+      const dayOfWeek = '火';
+      const dayIndex = 1;
       
-      let placed = false;
+      const currentDate = new Date(weekStart);
+      currentDate.setDate(currentDate.getDate() + dayIndex);
+      const dateStr = currentDate.toISOString().split('T')[0];
       
-      for (const { day: dayOfWeek, index: dayIndex } of daysToTry) {
-        if (placed) break;
+      // 休日チェック
+      if (this.isHoliday(dateStr)) {
+        console.log(`⏩ ${dateStr}（${dayOfWeek}）は休日のためスキップ`);
+        continue;
+      }
+      
+      // 成果発表会期間チェック（1/26-1/28）
+      const presentationStart = new Date('2026-01-26');
+      const presentationEnd = new Date('2026-01-28');
+      if (currentDate >= presentationStart && currentDate <= presentationEnd) {
+        console.log(`⏩ ${dateStr}は成果発表会期間のためスキップ`);
+        continue;
+      }
+      
+      // 補講期間チェック（1/29-2/6）
+      const makeupStart = new Date('2026-01-29');
+      const makeupEnd = new Date('2026-02-06');
+      if (currentDate >= makeupStart && currentDate <= makeupEnd) {
+        console.log(`⏩ ${dateStr}は補講期間のためスキップ`);
+        continue;
+      }
+      
+      // 2限と3限のキーを作成
+      const slot2Key = `${week}-${dayOfWeek}-2限`;
+      const slot3Key = `${week}-${dayOfWeek}-3限`;
+      
+      // 教師の空き状況チェック
+      const teacherScheduleSet = this.teacherSchedule.get(moritaTeacher.id);
+      const teacherSlot2Used = teacherScheduleSet?.has(slot2Key);
+      const teacherSlot3Used = teacherScheduleSet?.has(slot3Key);
+      
+      if (teacherSlot2Used || teacherSlot3Used) {
+        continue; // 教師が既に予定あり
+      }
+      
+      // IT1年の2限とIT2年の3限が空いているかチェック
+      const it1Slot2Used = it1Schedule.some(e => 
+        e.week === week && e.dayOfWeek === dayOfWeek && e.period === '2限'
+      );
+      const it2Slot3Used = it2Schedule.some(e => 
+        e.week === week && e.dayOfWeek === dayOfWeek && e.period === '3限'
+      );
+      
+      // 両方配置可能な場合のみ配置（同じ日程の希望を実現）
+      if (!it1Slot2Used && !it2Slot3Used && 
+          placedAdvancedCount < targetAdvanced && placedGraduationTueCount < 16) {
         
-        const currentDate = new Date(weekStart);
-        currentDate.setDate(currentDate.getDate() + dayIndex);
-        const dateStr = currentDate.toISOString().split('T')[0];
-        
-        // 休日チェック
-        if (this.isHoliday(dateStr)) {
-          console.log(`⏩ ${dateStr}（${dayOfWeek}）は休日のためスキップ`);
-          continue;
-        }
-        
-        // 成果発表会期間チェック（1/26-1/28）
-        const presentationStart = new Date('2026-01-26');
-        const presentationEnd = new Date('2026-01-28');
-        if (currentDate >= presentationStart && currentDate <= presentationEnd) {
-          console.log(`⏩ ${dateStr}は成果発表会期間のためスキップ`);
-          continue;
-        }
-        
-        // 補講期間チェック（1/29-2/6）
-        const makeupStart = new Date('2026-01-29');
-        const makeupEnd = new Date('2026-02-06');
-        if (currentDate >= makeupStart && currentDate <= makeupEnd) {
-          console.log(`⏩ ${dateStr}は補講期間のためスキップ`);
-          continue;
-        }
-        
-        // 2,3,4限が空いているかチェック（1限はNG）
-        const slot2Key = `${week}-${dayOfWeek}-2限`;
-        const slot3Key = `${week}-${dayOfWeek}-3限`;
-        const slot4Key = `${week}-${dayOfWeek}-4限`;
-        
-        // 教師の空き状況チェック
-        const teacherScheduleSet = this.teacherSchedule.get(moritaTeacher.id);
-        const teacherSlot2Used = teacherScheduleSet?.has(slot2Key);
-        const teacherSlot3Used = teacherScheduleSet?.has(slot3Key);
-        const teacherSlot4Used = teacherScheduleSet?.has(slot4Key);
-        
-        if (teacherSlot2Used || teacherSlot3Used || teacherSlot4Used) {
-          continue; // 教師が既に予定あり
-        }
-        
-        // IT1年の2限とIT2年の3,4限が空いているかチェック
-        const it1Slot2Used = it1Schedule.some(e => 
-          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '2限'
-        );
-        const it2Slot3Used = it2Schedule.some(e => 
-          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '3限'
-        );
-        const it2Slot4Used = it2Schedule.some(e => 
-          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '4限'
-        );
-        
-        if (it1Slot2Used || it2Slot3Used || it2Slot4Used) {
-          continue; // いずれかのグループが既に予定あり
-        }
-        
-        // 配置可能な場合、両科目を配置
-        console.log(`✅ 第${week}週 ${dayOfWeek}曜日: 2限に進級制作（IT1年）、3-4限に卒業制作（IT2年）を配置`);
+        console.log(`✅ 第${week}週 ${dayOfWeek}曜日: 2限に進級制作（IT1年）、3限に卒業制作（IT2年）を配置`);
         
         // 進級制作（IT1年）を2限に配置
         const entry1: GeneratedEntry = {
@@ -1112,8 +1115,9 @@ export class AutoScheduleGenerator {
         };
         
         it1Schedule.push(entry1);
+        placedAdvancedCount++;
         
-        // 卒業制作（IT2年）を3-4限に配置
+        // 卒業制作（IT2年）を3限に配置（1コマ目）
         const entry2_3: GeneratedEntry = {
           id: `morita-graduation-${week}-3`,
           groupId: it2Group.id,
@@ -1130,13 +1134,8 @@ export class AutoScheduleGenerator {
           isFixed: false
         };
         
-        const entry2_4: GeneratedEntry = {
-          ...entry2_3,
-          id: `morita-graduation-${week}-4`,
-          period: '4限'
-        };
-        
-        it2Schedule.push(entry2_3, entry2_4);
+        it2Schedule.push(entry2_3);
+        placedGraduationTueCount++;
         
         // 教師スケジュールを更新
         if (!this.teacherSchedule.has(moritaTeacher.id)) {
@@ -1145,18 +1144,761 @@ export class AutoScheduleGenerator {
         const teacherSet = this.teacherSchedule.get(moritaTeacher.id)!;
         teacherSet.add(slot2Key);
         teacherSet.add(slot3Key);
-        teacherSet.add(slot4Key);
-        
-        placedCount++;
-        placed = true;
       }
     }
+    
+    // 卒業制作の残りコマを水曜4限に配置（32コマ中16コマが火曜、残り16コマを水曜4限に）
+    console.log(`\n📌 卒業制作の残り16コマを水曜4限に配置`);
+    
+    for (let week = 1; week <= weeks && placedGraduationWedCount < 16; week++) {
+      const weekStart = new Date(options.startDate);
+      weekStart.setDate(weekStart.getDate() + (week - 1) * 7);
+      
+      // 水曜日（index: 2）
+      const dayOfWeek = '水';
+      const dayIndex = 2;
+      
+      const currentDate = new Date(weekStart);
+      currentDate.setDate(currentDate.getDate() + dayIndex);
+      const dateStr = currentDate.toISOString().split('T')[0];
+      
+      // 10/22(水)は田上先生の3,4限があるのでスキップ
+      if (dateStr === '2025-10-22') {
+        console.log(`⏩ 10/22(水)は田上先生のキャリア実践Iがあるためスキップ → 1/21(水)4限に振替`);
+        continue;
+      }
+      
+      // 休日チェック
+      if (this.isHoliday(dateStr)) {
+        continue;
+      }
+      
+      // 成果発表会期間・補講期間チェック
+      const presentationStart = new Date('2026-01-26');
+      const presentationEnd = new Date('2026-01-28');
+      const makeupStart = new Date('2026-01-29');
+      const makeupEnd = new Date('2026-02-06');
+      if ((currentDate >= presentationStart && currentDate <= presentationEnd) ||
+          (currentDate >= makeupStart && currentDate <= makeupEnd)) {
+        continue;
+      }
+      
+      // 4限のキーを作成
+      const slot4Key = `${week}-${dayOfWeek}-4限`;
+      
+      // 教師の空き状況チェック
+      const teacherScheduleSet = this.teacherSchedule.get(moritaTeacher.id);
+      const teacherSlot4Used = teacherScheduleSet?.has(slot4Key);
+      
+      // IT2年の4限が空いているかチェック
+      const it2Slot4Used = it2Schedule.some(e => 
+        e.week === week && e.dayOfWeek === dayOfWeek && e.period === '4限'
+      );
+      
+      // 4限が空いている場合
+      if (!teacherSlot4Used && !it2Slot4Used && placedGraduationWedCount < 16) {
+        console.log(`✅ 第${week}週 ${dayOfWeek}曜日 4限に卒業制作（IT2年）を配置`);
+        
+        const entry: GeneratedEntry = {
+          id: `morita-graduation-wed-${week}-4`,
+          groupId: it2Group.id,
+          subjectId: graduationProject.id,
+          subjectName: '卒業制作',
+          teacherId: moritaTeacher.id,
+          teacherName: moritaTeacher.name,
+          classroomId: graduationProject.availableClassroomIds[0],
+          classroomName: this.classrooms.find(c => c.id === graduationProject.availableClassroomIds[0])?.name || 'ICT2',
+          week,
+          date: dateStr,
+          dayOfWeek,
+          period: '4限',
+          isFixed: false
+        };
+        
+        it2Schedule.push(entry);
+        placedGraduationWedCount++;
+        
+        // 教師スケジュールを更新
+        if (!this.teacherSchedule.has(moritaTeacher.id)) {
+          this.teacherSchedule.set(moritaTeacher.id, new Set());
+        }
+        const teacherSet = this.teacherSchedule.get(moritaTeacher.id)!;
+        teacherSet.add(slot4Key);
+      }
+    }
+    
+    // 10/22の分を1/21(水)4限に追加
+    const jan21Date = '2026-01-21';
+    const jan21Week = 17;
+    const jan21Slot4Key = `${jan21Week}-水-4限`;
+    
+    console.log(`\n📌 10/22の振替分を1/21(水)4限に配置`);
+    
+    const jan21Entry: GeneratedEntry = {
+      id: `morita-graduation-wed-jan21-4`,
+      groupId: it2Group.id,
+      subjectId: graduationProject.id,
+      subjectName: '卒業制作 [10/22振替]',
+      teacherId: moritaTeacher.id,
+      teacherName: moritaTeacher.name,
+      classroomId: graduationProject.availableClassroomIds[0],
+      classroomName: this.classrooms.find(c => c.id === graduationProject.availableClassroomIds[0])?.name || 'ICT2',
+      week: jan21Week,
+      date: jan21Date,
+      dayOfWeek: '水',
+      period: '4限',
+      isFixed: false
+    };
+    
+    it2Schedule.push(jan21Entry);
+    placedGraduationWedCount++;
+    
+    // 教師スケジュールを更新
+    if (!this.teacherSchedule.has(moritaTeacher.id)) {
+      this.teacherSchedule.set(moritaTeacher.id, new Set());
+    }
+    const teacherSet = this.teacherSchedule.get(moritaTeacher.id)!;
+    teacherSet.add(jan21Slot4Key);
     
     // スケジュールを更新
     schedule.set(it1Group.id, it1Schedule);
     schedule.set(it2Group.id, it2Schedule);
     
-    console.log(`✅ 森田典子先生の進級制作・卒業制作配置完了: ${placedCount}回（2限:進級制作、3-4限:卒業制作）`);
+    const totalGraduationPlaced = placedGraduationTueCount + placedGraduationWedCount;
+    console.log(`✅ 森田典子先生の配置完了:`);
+    console.log(`  - 進級制作（IT1年）: ${placedAdvancedCount}/${targetAdvanced}コマ（火曜2限）`);
+    console.log(`  - 卒業制作（IT2年）: ${totalGraduationPlaced}/${targetGraduation}コマ`);
+    console.log(`    ・火曜3限: ${placedGraduationTueCount}コマ`);
+    console.log(`    ・水曜4限: ${placedGraduationWedCount}コマ（10/22→1/21振替含む）`);
+  }
+
+  /**
+   * Phase 2.8: Fiona先生のActive Communication in English I/II配置
+   * 木曜3,4限（13:15開始）に1年と2年を交互配置し、月曜日に補填授業を設定
+   */
+  private placeFionaEnglish(
+    groups: any[],
+    weeks: number,
+    options: GenerationOptions,
+    schedule: Map<string, GeneratedEntry[]>
+  ): void {
+    console.log('\n🔧 Phase 2.8: Fiona先生のActive Communication in English I/II配置');
+    
+    // TD1年とTD2年のグループを取得（地域観光デザイン学科のみ）
+    const td1Group = groups.find(g => g.id === 'design-1');
+    const td2Group = groups.find(g => g.id === 'design-2');
+    
+    if (!td1Group || !td2Group) {
+      console.log('❌ TDグループが見つかりません');
+      return;
+    }
+    
+    // Fiona先生のActive Communication in English I/IIを取得
+    const englishSubject1 = this.subjects.find(s => 
+      (s.name === 'Active Communication in English I' || s.name === 'Active Communication in English Ⅰ') && 
+      s.teacherIds.some(tid => {
+        const teacher = this.teachers.find(t => t.id === tid);
+        return teacher?.name === 'Fiona';
+      })
+    );
+    
+    const englishSubject2 = this.subjects.find(s => 
+      (s.name === 'Active Communication in English II' || s.name === 'Active Communication in English Ⅱ') && 
+      s.teacherIds.some(tid => {
+        const teacher = this.teachers.find(t => t.id === tid);
+        return teacher?.name === 'Fiona';
+      })
+    );
+    
+    if (!englishSubject1 || !englishSubject2) {
+      console.log('❌ Fiona先生の科目が見つかりません');
+      return;
+    }
+    
+    const fionaTeacher = this.teachers.find(t => t.name === 'Fiona');
+    if (!fionaTeacher) {
+      console.log('❌ Fiona先生が見つかりません');
+      return;
+    }
+    
+    console.log(`📚 Active Communication in English I: ${englishSubject1.totalClasses}コマ`);
+    console.log(`📚 Active Communication in English II: ${englishSubject2.totalClasses}コマ`);
+    console.log(`⏰ 木曜3限は13:15開始（15分遅れ）`);
+    
+    const td1Schedule = schedule.get(td1Group.id) || [];
+    const td2Schedule = schedule.get(td2Group.id) || [];
+    
+    let placed1Count = 0;
+    let placed2Count = 0;
+    
+    // 木曜日3,4限の配置（1年と2年を交互に）
+    for (let week = 1; week <= weeks; week++) {
+      const weekStart = new Date(options.startDate);
+      weekStart.setDate(weekStart.getDate() + (week - 1) * 7);
+      
+      const dayOfWeek = '木';
+      const dayIndex = 3; // 木曜日
+      
+      const currentDate = new Date(weekStart);
+      currentDate.setDate(currentDate.getDate() + dayIndex);
+      const dateStr = currentDate.toISOString().split('T')[0];
+      
+      // 休日チェック
+      if (this.isHoliday(dateStr)) {
+        console.log(`⏩ ${dateStr}（${dayOfWeek}）は休日のためスキップ`);
+        continue;
+      }
+      
+      // 第14週（1/1）は元日で休みなので注意
+      if (week === 14) {
+        console.log(`⏩ 第14週（1/1）は元日のためスキップ`);
+        continue;
+      }
+      
+      // 成果発表会期間チェック（1/26-1/28）
+      const presentationStart = new Date('2026-01-26');
+      const presentationEnd = new Date('2026-01-28');
+      if (currentDate >= presentationStart && currentDate <= presentationEnd) {
+        console.log(`⏩ ${dateStr}は成果発表会期間のためスキップ`);
+        continue;
+      }
+      
+      // 補講期間チェック（1/29-2/6）
+      const makeupStart = new Date('2026-01-29');
+      const makeupEnd = new Date('2026-02-06');
+      if (currentDate >= makeupStart && currentDate <= makeupEnd) {
+        console.log(`⏩ ${dateStr}は補講期間のためスキップ`);
+        continue;
+      }
+      
+      // 3,4限のキーを作成
+      const slot3Key = `${week}-${dayOfWeek}-3限`;
+      const slot4Key = `${week}-${dayOfWeek}-4限`;
+      
+      // 教師の空き状況チェック
+      const teacherScheduleSet = this.teacherSchedule.get(fionaTeacher.id);
+      const teacherSlot3Used = teacherScheduleSet?.has(slot3Key);
+      const teacherSlot4Used = teacherScheduleSet?.has(slot4Key);
+      
+      if (teacherSlot3Used || teacherSlot4Used) {
+        continue; // 教師が既に予定あり
+      }
+      
+      // 第14週が休みなので、その後の週の判定を調整
+      let isFirstYear = false;
+      if (week < 14) {
+        // 第13週まで：奇数週が1年、偶数週が2年
+        isFirstYear = (week % 2 === 1);
+      } else {
+        // 第15週以降：偶数週が1年、奇数週が2年（14週でスキップしたため反転）
+        isFirstYear = (week % 2 === 0);
+      }
+      
+      if (isFirstYear && placed1Count < 8) {
+        // 1年生の配置
+        const td1Slot3Used = td1Schedule.some(e => 
+          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '3限'
+        );
+        const td1Slot4Used = td1Schedule.some(e => 
+          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '4限'
+        );
+        
+        if (!td1Slot3Used && !td1Slot4Used) {
+          console.log(`✅ 第${week}週 ${dayOfWeek}曜日 3,4限（13:15開始）にActive Communication in English I（TD1年）を配置`);
+          
+          // 3限（13:15開始）
+          const entry1_3: GeneratedEntry = {
+            id: `fiona-english1-${week}-3`,
+            groupId: td1Group.id,
+            subjectId: englishSubject1.id,
+            subjectName: 'Active Communication in English I [13:15開始]',
+            teacherId: fionaTeacher.id,
+            teacherName: fionaTeacher.name,
+            classroomId: englishSubject1.availableClassroomIds[0],
+            classroomName: this.classrooms.find(c => c.id === englishSubject1.availableClassroomIds[0])?.name || '語学室',
+            week,
+            date: dateStr,
+            dayOfWeek,
+            period: '3限',
+            isFixed: true
+          };
+          
+          // 4限
+          const entry1_4: GeneratedEntry = {
+            ...entry1_3,
+            id: `fiona-english1-${week}-4`,
+            subjectName: 'Active Communication in English I',
+            period: '4限'
+          };
+          
+          td1Schedule.push(entry1_3, entry1_4);
+          placed1Count++;
+        }
+      } else if (!isFirstYear && placed2Count < 8) {
+        // 2年生の配置
+        const td2Slot3Used = td2Schedule.some(e => 
+          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '3限'
+        );
+        const td2Slot4Used = td2Schedule.some(e => 
+          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '4限'
+        );
+        
+        if (!td2Slot3Used && !td2Slot4Used) {
+          console.log(`✅ 第${week}週 ${dayOfWeek}曜日 3,4限（13:15開始）にActive Communication in English II（TD2年）を配置`);
+          
+          // 3限（13:15開始）
+          const entry2_3: GeneratedEntry = {
+            id: `fiona-english2-${week}-3`,
+            groupId: td2Group.id,
+            subjectId: englishSubject2.id,
+            subjectName: 'Active Communication in English II [13:15開始]',
+            teacherId: fionaTeacher.id,
+            teacherName: fionaTeacher.name,
+            classroomId: englishSubject2.availableClassroomIds[0],
+            classroomName: this.classrooms.find(c => c.id === englishSubject2.availableClassroomIds[0])?.name || '語学室',
+            week,
+            date: dateStr,
+            dayOfWeek,
+            period: '3限',
+            isFixed: true
+          };
+          
+          // 4限
+          const entry2_4: GeneratedEntry = {
+            ...entry2_3,
+            id: `fiona-english2-${week}-4`,
+            subjectName: 'Active Communication in English II',
+            period: '4限'
+          };
+          
+          td2Schedule.push(entry2_3, entry2_4);
+          placed2Count++;
+        }
+      }
+      
+      // 教師スケジュールを更新
+      if (!this.teacherSchedule.has(fionaTeacher.id)) {
+        this.teacherSchedule.set(fionaTeacher.id, new Set());
+      }
+      const teacherSet = this.teacherSchedule.get(fionaTeacher.id)!;
+      teacherSet.add(slot3Key);
+      teacherSet.add(slot4Key);
+    }
+    
+    // 月曜日の補填授業を配置
+    console.log('\n📝 月曜日の補填授業を配置（15分×16コマ＝240分の不足分）');
+    
+    // 1年生の補填：11/10（第7週）と11/17（第8週）
+    this.placeFionaCompensation(td1Group, englishSubject1, fionaTeacher, 7, '2025-11-10', td1Schedule);
+    this.placeFionaCompensation(td1Group, englishSubject1, fionaTeacher, 8, '2025-11-17', td1Schedule);
+    
+    // 2年生の補填：12/1（第10週）と12/8（第11週）
+    this.placeFionaCompensation(td2Group, englishSubject2, fionaTeacher, 10, '2025-12-01', td2Schedule);
+    this.placeFionaCompensation(td2Group, englishSubject2, fionaTeacher, 11, '2025-12-08', td2Schedule);
+    
+    // スケジュールを更新
+    schedule.set(td1Group.id, td1Schedule);
+    schedule.set(td2Group.id, td2Schedule);
+    
+    console.log(`✅ Fiona先生のActive Communication in English I/II配置完了`);
+    console.log(`  - TD1年: 木曜${placed1Count}回 + 月曜補填3コマ（240分）`);
+    console.log(`  - TD2年: 木曜${placed2Count}回 + 月曜補填3コマ（240分）`);
+  }
+  
+  /**
+   * Fiona先生の月曜日補填授業を配置するヘルパーメソッド
+   */
+  private placeFionaCompensation(
+    group: any,
+    subject: any,
+    teacher: any,
+    week: number,
+    dateStr: string,
+    groupSchedule: GeneratedEntry[]
+  ): void {
+    const dayOfWeek = '月';
+    
+    // 3限（75分授業）
+    const entry3: GeneratedEntry = {
+      id: `fiona-compensation-${group.id}-${week}-3`,
+      groupId: group.id,
+      subjectId: subject.id,
+      subjectName: `${subject.name} [補填75分]`,
+      teacherId: teacher.id,
+      teacherName: teacher.name,
+      classroomId: subject.availableClassroomIds[0],
+      classroomName: this.classrooms.find(c => c.id === subject.availableClassroomIds[0])?.name || '語学室',
+      week,
+      date: dateStr,
+      dayOfWeek,
+      period: '3限',
+      isFixed: true
+    };
+    
+    groupSchedule.push(entry3);
+    
+    // 週によって4限も追加（11/10と12/1は3,4限、11/17と12/8は3限のみ）
+    if (week === 7 || week === 10) {
+      // 4限（90分授業）
+      const entry4: GeneratedEntry = {
+        ...entry3,
+        id: `fiona-compensation-${group.id}-${week}-4`,
+        subjectName: `${subject.name} [補填90分]`,
+        period: '4限'
+      };
+      
+      groupSchedule.push(entry4);
+      console.log(`  ✅ ${dateStr}（月）3限（75分）+ 4限（90分）= 165分補填`);
+    } else {
+      console.log(`  ✅ ${dateStr}（月）3限（75分）補填`);
+    }
+  }
+
+
+  /**
+   * Phase 2.9のラッパーメソッド: Lee先生のBusiness English I/II配置
+   */
+  private placeLeeBusinessEnglish(
+    groups: any[],
+    weeks: number,
+    options: GenerationOptions,
+    schedule: Map<string, GeneratedEntry[]>
+  ): void {
+    console.log('\n🔧 Phase 2.9: Lee先生のBusiness English I/II配置');
+    
+    // TD1年とTD2年のグループを取得
+    const td1Group = groups.find(g => g.id === 'design-1');
+    const td2Group = groups.find(g => g.id === 'design-2');
+    
+    if (!td1Group || !td2Group) {
+      console.log('❌ TDグループが見つかりません');
+      return;
+    }
+    
+    // Lee先生を取得
+    const leeTeacher = this.teachers.find(t => t.name === 'Lee');
+    if (!leeTeacher) {
+      console.log('❌ Lee先生が見つかりません');
+      return;
+    }
+    
+    // Business English I/IIを取得
+    const businessEnglishI = this.subjects.find(s => 
+      (s.name === 'Business English I' || s.name === 'Business English Ⅰ') &&
+      s.teacherIds.some(tid => {
+        const teacher = this.teachers.find(t => t.id === tid);
+        return teacher?.name === 'Lee';
+      })
+    );
+    const businessEnglishII = this.subjects.find(s => 
+      (s.name === 'Business English II' || s.name === 'Business English Ⅱ') &&
+      s.teacherIds.some(tid => {
+        const teacher = this.teachers.find(t => t.id === tid);
+        return teacher?.name === 'Lee';
+      })
+    );
+    
+    if (!businessEnglishI || !businessEnglishII) {
+      console.log('❌ Business English I/IIが見つかりません');
+      return;
+    }
+    
+    // Business English用の教室を探す（語学室または大教室）
+    let largeClassroom = this.classrooms.find(c => 
+      c.name.includes('語学') || c.name.includes('Language')
+    );
+    
+    // 語学室が見つからない場合は、容量の大きい教室を探す
+    if (!largeClassroom) {
+      largeClassroom = this.classrooms.find(c => c.capacity >= 20);
+    }
+    
+    // それでも見つからない場合は、最初の教室を使用
+    if (!largeClassroom) {
+      largeClassroom = this.classrooms[0];
+      console.log(`⚠️ 適切な教室が見つからないため、${largeClassroom.name}を使用`);
+    }
+    
+    console.log(`📚 Business English I: ${businessEnglishI.totalClasses}コマ`);
+    console.log(`📚 Business English II: ${businessEnglishII.totalClasses}コマ`);
+    console.log(`📍 金曜3,4限に配置（木曜4限はFiona先生が使用中）`);
+    
+    const td1Schedule = schedule.get(td1Group.id) || [];
+    const td2Schedule = schedule.get(td2Group.id) || [];
+    let placedCount = 0;
+    
+    // 各週の配置
+    for (let week = 1; week <= weeks; week++) {
+      const weekStart = new Date(options.startDate);
+      weekStart.setDate(weekStart.getDate() + (week - 1) * 7);
+      
+      // 金曜日（index: 4）
+      const dayOfWeek = '金';
+      const dayIndex = 4;
+      
+      const currentDate = new Date(weekStart);
+      currentDate.setDate(currentDate.getDate() + dayIndex);
+      const dateStr = currentDate.toISOString().split('T')[0];
+      
+      // 休日チェック
+      if (this.isHoliday(dateStr)) {
+        console.log(`⏩ ${dateStr}（${dayOfWeek}）は休日のためスキップ`);
+        continue;
+      }
+      
+      // 第14週（1/1）は元日で休み
+      if (week === 14) {
+        console.log(`⏩ 第14週は年末年始のためスキップ`);
+        continue;
+      }
+      
+      // 成果発表会期間チェック（1/26-1/28）
+      const presentationStart = new Date('2026-01-26');
+      const presentationEnd = new Date('2026-01-28');
+      if (currentDate >= presentationStart && currentDate <= presentationEnd) {
+        console.log(`⏩ ${dateStr}は成果発表会期間のためスキップ`);
+        continue;
+      }
+      
+      // 補講期間チェック（1/29-2/6）
+      const makeupStart = new Date('2026-01-29');
+      const makeupEnd = new Date('2026-02-06');
+      if (currentDate >= makeupStart && currentDate <= makeupEnd) {
+        console.log(`⏩ ${dateStr}は補講期間のためスキップ`);
+        continue;
+      }
+      
+      // 3,4限のキーを作成
+      const slot3Key = `${week}-${dayOfWeek}-3限`;
+      const slot4Key = `${week}-${dayOfWeek}-4限`;
+      
+      // 教師の空き状況チェック
+      const teacherScheduleSet = this.teacherSchedule.get(leeTeacher.id);
+      const teacherSlot3Used = teacherScheduleSet?.has(slot3Key);
+      const teacherSlot4Used = teacherScheduleSet?.has(slot4Key);
+      
+      if (teacherSlot3Used || teacherSlot4Used) {
+        continue; // 教師が既に予定あり
+      }
+      
+      // TD1年とTD2年の3,4限が空いているかチェック
+      const td1Slot3Used = td1Schedule.some(e => 
+        e.week === week && e.dayOfWeek === dayOfWeek && e.period === '3限'
+      );
+      const td1Slot4Used = td1Schedule.some(e => 
+        e.week === week && e.dayOfWeek === dayOfWeek && e.period === '4限'
+      );
+      const td2Slot3Used = td2Schedule.some(e => 
+        e.week === week && e.dayOfWeek === dayOfWeek && e.period === '3限'
+      );
+      const td2Slot4Used = td2Schedule.some(e => 
+        e.week === week && e.dayOfWeek === dayOfWeek && e.period === '4限'
+      );
+      
+      if (td1Slot3Used || td1Slot4Used || td2Slot3Used || td2Slot4Used) {
+        continue; // いずれかのグループが既に予定あり
+      }
+      
+      console.log(`✅ 第${week}週 ${dayOfWeek}曜日 3限にBusiness English I（TD1年）、4限にBusiness English II（TD2年）を配置`);
+      
+      // 金曜3限 - Business English I（TD1年）
+      const friday3Entry: GeneratedEntry = {
+        id: `lee-fri-3-${week}`,
+        groupId: td1Group.id,
+        groupName: td1Group.name,
+        subjectId: businessEnglishI.id,
+        subjectName: businessEnglishI.name,
+        teacherId: leeTeacher.id,
+        teacherName: leeTeacher.name,
+        classroomId: largeClassroom.id,
+        classroomName: largeClassroom.name,
+        week,
+        date: dateStr,
+        dayOfWeek: '金',
+        period: '3限',
+        isFixed: true
+      };
+      
+      td1Schedule.push(friday3Entry);
+      
+      // 金曜4限 - Business English II（TD2年）
+      const friday4Entry: GeneratedEntry = {
+        id: `lee-fri-4-${week}`,
+        groupId: td2Group.id,
+        groupName: td2Group.name,
+        subjectId: businessEnglishII.id,
+        subjectName: businessEnglishII.name,
+        teacherId: leeTeacher.id,
+        teacherName: leeTeacher.name,
+        classroomId: largeClassroom.id,
+        classroomName: largeClassroom.name,
+        week,
+        date: dateStr,
+        dayOfWeek: '金',
+        period: '4限',
+        isFixed: true
+      };
+      
+      td2Schedule.push(friday4Entry);
+      
+      // 教師スケジュールを更新
+      if (!this.teacherSchedule.has(leeTeacher.id)) {
+        this.teacherSchedule.set(leeTeacher.id, new Set());
+      }
+      const teacherSet = this.teacherSchedule.get(leeTeacher.id)!;
+      teacherSet.add(slot3Key);
+      teacherSet.add(slot4Key);
+      
+      placedCount++;
+    }
+    
+    // スケジュールを更新
+    schedule.set(td1Group.id, td1Schedule);
+    schedule.set(td2Group.id, td2Schedule);
+    
+    console.log(`✅ Lee先生のBusiness English配置完了: ${placedCount}回`);
+    console.log(`  - Business English I（TD1年）: 金曜3限 - ${td1Schedule.filter(e => e.teacherName === 'Lee').length}コマ実際に配置`);
+    console.log(`  - Business English II（TD2年）: 金曜4限 - ${td2Schedule.filter(e => e.teacherName === 'Lee').length}コマ実際に配置`);
+    
+    // デバッグ：最初の3週分のLee先生のスケジュールを表示
+    const leeSchedules = td1Schedule.filter(e => e.teacherName === 'Lee').slice(0, 3);
+    if (leeSchedules.length > 0) {
+      console.log('🔍 Lee先生のスケジュール（最初の3週）:', leeSchedules.map(e => ({
+        week: e.week,
+        day: e.dayOfWeek || e.day,
+        period: e.period,
+        subject: e.subjectName
+      })));
+    } else {
+      console.log('⚠️ Lee先生のスケジュールが生成されていません！');
+    }
+  }
+
+  // Phase 2.10: 鈴木俊良・宮嵜真由美先生の共同授業 Creative Communication Lab I/II配置
+  private placeCreativeCommunicationLab(
+    schedule: Map<string, GeneratedEntry[]>,
+    groups: Array<{ id: string; name: string; department: string; grade: string }>,
+    weeks: number,
+    options: GenerationOptions
+  ): void {
+    console.log('\n📚 Phase 2.10: Creative Communication Lab（鈴木・宮嵜共同）配置開始');
+    
+    // 鈴木俊良先生と宮嵜真由美先生を取得
+    const suzukiTeacher = this.teachers.find(t => t.name === '鈴木俊良');
+    const miyazakiTeacher = this.teachers.find(t => t.name === '宮嵜真由美');
+    
+    if (!suzukiTeacher || !miyazakiTeacher) {
+      console.log('❌ 鈴木先生または宮嵜先生が見つかりません');
+      return;
+    }
+    
+    // Creative Communication Lab I/IIを取得
+    const creativeLab = this.subjects.find(s => 
+      s.name.includes('Creative Communication Lab') || 
+      s.name.includes('クリエイティブコミュニケーションラボ')
+    );
+    
+    if (!creativeLab) {
+      console.log('❌ Creative Communication Labが見つかりません');
+      return;
+    }
+    
+    // 全グループ（IT1, IT2, TD1, TD2）を取得
+    const allGroups = groups.filter(g => 
+      ['it-1', 'it-2', 'design-1', 'design-2'].includes(g.id)
+    );
+    
+    // たかねこ教室を取得
+    const takanekoClassroom = this.classrooms.find(c => c.name === 'たかねこ');
+    if (!takanekoClassroom) {
+      console.log('❌ たかねこ教室が見つかりません');
+      return;
+    }
+    
+    let placedCount = 0;
+    const totalNeeded = 16; // 16回実施
+    
+    // 金曜1限のみに配置（鈴木・宮嵜共同授業）
+    for (let week = 1; week <= weeks && placedCount < totalNeeded; week++) {
+      // 金曜日の日付を計算
+      const fridayDate = this.calculateDate(options.startDate, week, '金');
+      
+      // 休日チェック
+      if (this.isHoliday(fridayDate)) {
+        console.log(`⏩ 第${week}週の金曜日は休日のためスキップ`);
+        continue;
+      }
+      
+      // 全グループが金曜1限に空いているかチェック
+      let canPlace1 = true;
+      
+      for (const group of allGroups) {
+        const groupSchedule = schedule.get(group.id) || [];
+        const hasConflict1 = groupSchedule.some(e => 
+          e.week === week && e.dayOfWeek === '金' && e.period === '1限'
+        );
+        
+        if (hasConflict1) canPlace1 = false;
+      }
+      
+      // 金曜1限に配置（鈴木・宮嵜共同授業）
+      if (canPlace1 && placedCount < totalNeeded) {
+        for (const group of allGroups) {
+          const groupSchedule = schedule.get(group.id) || [];
+          const entry: GeneratedEntry = {
+            id: `creative-lab-${group.id}-fri-1-${week}`,
+            groupId: group.id,
+            groupName: group.name,
+            subjectId: creativeLab.id,
+            subjectName: 'クリエイティブコミュニケーションラボ I/II [全学年合同・共同授業]',
+            teacherId: suzukiTeacher.id,  // 主担当を鈴木先生に
+            teacherName: '鈴木俊良・宮嵜真由美',  // 両教師名を表示
+            classroomId: takanekoClassroom.id,
+            classroomName: takanekoClassroom.name,
+            week,
+            date: fridayDate,
+            dayOfWeek: '金',
+            period: '1限',
+            isFixed: true
+          };
+          groupSchedule.push(entry);
+          schedule.set(group.id, groupSchedule);
+        }
+        
+        // 両教師のスケジュールを更新
+        const slot1Key = `${week}-金-1限`;
+        
+        // 鈴木先生のスケジュール
+        if (!this.teacherSchedule.has(suzukiTeacher.id)) {
+          this.teacherSchedule.set(suzukiTeacher.id, new Set());
+        }
+        this.teacherSchedule.get(suzukiTeacher.id)!.add(slot1Key);
+        
+        // 宮嵜先生のスケジュール
+        if (!this.teacherSchedule.has(miyazakiTeacher.id)) {
+          this.teacherSchedule.set(miyazakiTeacher.id, new Set());
+        }
+        this.teacherSchedule.get(miyazakiTeacher.id)!.add(slot1Key);
+        
+        placedCount++;
+      }
+    }
+    
+    console.log(`✅ Creative Communication Lab配置完了: ${placedCount}/${totalNeeded}コマ`);
+    console.log(`  - 鈴木俊良・宮嵜真由美 共同授業`);
+    console.log(`  - 全学年合同授業: 金曜1限（たかねこ教室）`);
+    
+    // デバッグ：最初の3週分のスケジュールを表示
+    const it1Schedule = schedule.get('it-1') || [];
+    const creativeLabSchedules = it1Schedule.filter(e => e.subjectName.includes('クリエイティブコミュニケーションラボ')).slice(0, 3);
+    if (creativeLabSchedules.length > 0) {
+      console.log('🔍 Creative Communication Lab（最初の3週）:', creativeLabSchedules.map(e => ({
+        week: e.week,
+        day: e.dayOfWeek,
+        period: e.period,
+        teachers: e.teacherName
+      })));
+    }
   }
 
   // 以降の既存メソッドは変更なし（省略）

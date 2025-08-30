@@ -487,6 +487,7 @@ function App() {
           {activeTab === 'subjects' && (
             <div className="manager-container wide-layout">
               <SubjectManager
+                key={`subject-manager-${Date.now()}`}
                 subjects={subjects}
                 teachers={teachers}
                 classrooms={classrooms}
