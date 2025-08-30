@@ -7,12 +7,20 @@ import SemesterExportButtons from './SemesterExportButtons';
 
 interface SemesterEntry {
   id: string;
-  timeSlot: {
+  timeSlot?: {
     week: number;
     date: string;
     dayOfWeek: string;
     period: string;
   };
+  // 新しい形式のプロパティ（placeSonPairedSubjectsで使用）
+  groupId?: string;
+  week?: number;
+  date?: string;
+  dayOfWeek?: string;
+  period?: string;
+  isFixed?: boolean;
+  // 共通プロパティ
   subjectId: string;
   subjectName: string;
   teacherId: string;
@@ -400,9 +408,9 @@ const SemesterTimetable = ({
       if (subject?.comboSubjectId && semesterData) {
         const pairEntry = semesterData.groups[activeTab].schedule.find(item => 
           item.subjectId === subject.comboSubjectId &&
-          item.timeSlot.week === entry.timeSlot.week &&
-          item.timeSlot.dayOfWeek === entry.timeSlot.dayOfWeek &&
-          item.timeSlot.period === entry.timeSlot.period
+          (item.timeSlot?.week || item.week) === (entry.timeSlot?.week || entry.week) &&
+          (item.timeSlot?.dayOfWeek || item.dayOfWeek) === (entry.timeSlot?.dayOfWeek || entry.dayOfWeek) &&
+          (item.timeSlot?.period || item.period) === (entry.timeSlot?.period || entry.period)
         );
         
         if (pairEntry) {
@@ -462,9 +470,9 @@ const SemesterTimetable = ({
         if (subject?.comboSubjectId) {
           const pairEntry = groupData.schedule.find(item => 
             item.subjectId === subject.comboSubjectId &&
-            item.timeSlot.week === entry.timeSlot.week &&
-            item.timeSlot.dayOfWeek === entry.timeSlot.dayOfWeek &&
-            item.timeSlot.period === entry.timeSlot.period
+            (item.timeSlot?.week || item.week) === (entry.timeSlot?.week || entry.week) &&
+            (item.timeSlot?.dayOfWeek || item.dayOfWeek) === (entry.timeSlot?.dayOfWeek || entry.dayOfWeek) &&
+            (item.timeSlot?.period || item.period) === (entry.timeSlot?.period || entry.period)
           );
           
           if (pairEntry) {
@@ -592,7 +600,7 @@ const SemesterTimetable = ({
         const groupData = newData.groups[groupKey];
         groupData.schedule = groupData.schedule.filter(entry => {
           // 第17週のコンビ授業を削除
-          if (entry.timeSlot.week === 17 && 
+          if ((entry.timeSlot?.week || entry.week) === 17 && 
               (entry.subjectName.includes('Essential English') || 
                entry.subjectName.includes('ビジネス日本語'))) {
             return false;
@@ -829,7 +837,7 @@ const SemesterTimetable = ({
             
             // Get entries for this week
             const weekEntries = currentGroup.schedule.filter(entry => 
-              entry.timeSlot.week === weekNumber
+              (entry.timeSlot?.week || entry.week) === weekNumber
             );
 
             // Calculate progress for each entry
@@ -881,8 +889,8 @@ const SemesterTimetable = ({
                       {days.map((day, dayIndex) => {
                         const dayData = weekDates[dayIndex];
                         const cellEntries = entriesWithProgress.filter(({ entry }) =>
-                          entry.timeSlot.dayOfWeek === day &&
-                          entry.timeSlot.period === period.name
+                          (entry.timeSlot?.dayOfWeek || entry.dayOfWeek) === day &&
+                          (entry.timeSlot?.period || entry.period) === period.name
                         );
                         const scheduleRequest = isScheduleRequest(dayData.date, period.name);
                         

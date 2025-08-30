@@ -47,7 +47,7 @@ export class PriorityScheduler {
           // 正しい週番号での配置（開始日を9/29として計算）
           const schedules = [
             { week: 3, date: '2025-10-15', dayOfWeek: '水', period: '3限' },
-            { week: 4, date: '2025-10-22', dayOfWeek: '水', period: '2限' },  // 田上先生の3,4限を避けて2限に
+            { week: 4, date: '2025-10-22', dayOfWeek: '水', period: '1限' },  // 田上先生の3,4限、森田先生の2限を避けて1限に
             { week: 5, date: '2025-10-29', dayOfWeek: '水', period: '3限' },
             { week: 6, date: '2025-11-05', dayOfWeek: '水', period: '3限' },
             { week: 7, date: '2025-11-12', dayOfWeek: '水', period: '3限' },
@@ -82,7 +82,52 @@ export class PriorityScheduler {
           );
         }
         
+        // 孫寧平先生の固定スケジュール
+        if (teacher.name === '孫寧平') {
+          // データベース概論：10-11月の木曜3,4限（第1週〜第8週）
+          for (let week = 1; week <= 8; week++) {
+            const date = new Date('2025-09-29');
+            date.setDate(date.getDate() + (week - 1) * 7 + 3); // 木曜日
+            const dateStr = date.toISOString().split('T')[0];
+            
+            fixedSchedule.push(
+              { week, date: dateStr, dayOfWeek: '木', period: '3限', subject: 'データベース概論' },
+              { week, date: dateStr, dayOfWeek: '木', period: '4限', subject: 'データベース概論' }
+            );
+          }
+          
+          // データベース設計：11/27（第9週）も追加してから12-1月
+          // 第9週（11/27）のデータベース設計
+          const week9Date = new Date('2025-09-29');
+          week9Date.setDate(week9Date.getDate() + 8 * 7 + 3); // 第9週の木曜日
+          const week9DateStr = week9Date.toISOString().split('T')[0];
+          fixedSchedule.push(
+            { week: 9, date: week9DateStr, dayOfWeek: '木', period: '3限', subject: 'データベース設計' },
+            { week: 9, date: week9DateStr, dayOfWeek: '木', period: '4限', subject: 'データベース設計' }
+          );
+          
+          // データベース設計：12-1月の木曜3,4限（第10週〜第17週）
+          for (let week = 10; week <= 17; week++) {
+            const date = new Date('2025-09-29');
+            date.setDate(date.getDate() + (week - 1) * 7 + 3); // 木曜日
+            const dateStr = date.toISOString().split('T')[0];
+            
+            // 休日・成果発表会期間はスキップ
+            if (dateStr === '2026-01-01') continue; // 元日
+            
+            fixedSchedule.push(
+              { week, date: dateStr, dayOfWeek: '木', period: '3限', subject: 'データベース設計' },
+              { week, date: dateStr, dayOfWeek: '木', period: '4限', subject: 'データベース設計' }
+            );
+          }
+        }
+        
         // 井手先生の次世代地域リーダー学は後で実装
+      }
+
+      // 孫寧平先生の特殊制約
+      if (teacher.name === '孫寧平') {
+        priority += 750; // 時期による科目切り替えの複雑な制約
       }
 
       // フィオーナ先生の特殊制約

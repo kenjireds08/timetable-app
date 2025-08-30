@@ -3,12 +3,20 @@ import { PriorityScheduler } from './priorityScheduler';
 
 interface GeneratedEntry {
   id: string;
-  timeSlot: {
+  timeSlot?: {
     week: number;
     date: string;
     dayOfWeek: string;
     period: string;
   };
+  // 新しい形式のプロパティ（placeSonPairedSubjectsで使用）
+  groupId?: string;
+  week?: number;
+  date?: string;
+  dayOfWeek?: string;
+  period?: string;
+  isFixed?: boolean;
+  // 共通プロパティ
   subjectId: string;
   subjectName: string;
   teacherId: string;
@@ -106,6 +114,18 @@ export class AutoScheduleGenerator {
     console.log('\n🎯 Phase 2: コンビ授業の配置開始');
     this.placeCommonSubjectsSynchronized(groups, weeks, options, schedule);
     
+    // Phase 2.5: 孫寧平先生のIT専門科目同日配置
+    console.log('\n🎯 Phase 2.5: 孫寧平先生のIT専門科目同日配置');
+    this.placeSonPairedSubjects(groups, weeks, options, schedule);
+    
+    // Phase 2.6: 西川徹先生のIoTとデータ活用I/II同時配置
+    console.log('\n🎯 Phase 2.6: 西川徹先生のIoTとデータ活用I/II配置');
+    this.placeNishikawaIoTSubjects(groups, weeks, options, schedule);
+    
+    // Phase 2.7: 森田典子先生の進級制作・卒業制作配置
+    console.log('\n🎯 Phase 2.7: 森田典子先生の進級制作・卒業制作配置');
+    this.placeMoritaProjects(groups, weeks, options, schedule);
+    
     // Phase 3: 各グループの専門科目配置 - 今回はスキップ
     // console.log('\n🎯 Phase 3: 専門科目の個別配置開始');
     // for (const group of groups) {
@@ -152,20 +172,44 @@ export class AutoScheduleGenerator {
         }
         
         // 該当科目を探す
-        const subject = this.subjects.find(s => 
-          s.teacherIds.includes(tp.teacher.id) && 
-          (s.name.includes('デザイン') || s.name.includes('プレゼン') || 
-           s.name.includes('次世代') || s.name.includes('キャリア'))
-        );
+        let subject = null;
+        
+        // 孫寧平先生の科目
+        if (tp.teacher.name === '孫寧平') {
+          if (fixed.subject === 'データベース概論') {
+            subject = this.subjects.find(s => 
+              s.teacherIds.includes(tp.teacher.id) && 
+              s.name.includes('データベース概論')
+            );
+          } else if (fixed.subject === 'データベース設計') {
+            subject = this.subjects.find(s => 
+              s.teacherIds.includes(tp.teacher.id) && 
+              s.name.includes('データベース設計')
+            );
+          }
+        } else {
+          // その他の先生の科目
+          subject = this.subjects.find(s => 
+            s.teacherIds.includes(tp.teacher.id) && 
+            (s.name.includes('デザイン') || s.name.includes('プレゼン') || 
+             s.name.includes('次世代') || s.name.includes('キャリア'))
+          );
+        }
         
         if (!subject) {
-          console.warn(`⚠️ ${tp.teacher.name}の科目が見つかりません`);
+          console.warn(`⚠️ ${tp.teacher.name}の科目${fixed.subject}が見つかりません`);
           continue;
         }
         
         // 教室を確保
         let classroom;
-        if (subject.name.includes('デザイン')) {
+        if (tp.teacher.name === '孫寧平' && subject.department === 'ITソリューション') {
+          // 孫先生のIT科目は「たかねこ」希望
+          classroom = this.classrooms.find(c => c.name === 'たかねこ') || 
+                     this.classrooms.find(c => c.name === 'ICT1') || 
+                     this.classrooms.find(c => c.name === 'ICT2') || 
+                     this.classrooms[0];
+        } else if (subject.name.includes('デザイン')) {
           // デザインとプレゼンテーションは通常教室
           classroom = this.classrooms.find(c => 
             c.name === 'ICT1' || c.name === 'ICT2' || c.name === 'しらかわ'
@@ -184,8 +228,14 @@ export class AutoScheduleGenerator {
         
         // 対象グループの決定
         let targetGroups;
-        if (subject.name.includes('デザイン')) {
+        if (tp.teacher.name === '孫寧平') {
+          // 孫先生のデータベース科目はIT1年のみ
+          targetGroups = groups.filter(g => g.id === 'it-1');
+        } else if (subject.name.includes('デザイン')) {
           // デザインとプレゼンテーションは1年生のIT・TD両方
+          targetGroups = groups.filter(g => g.grade === '1年');
+        } else if (subject.name.includes('キャリア')) {
+          // キャリア実践は1年生全体
           targetGroups = groups.filter(g => g.grade === '1年');
         } else if (subject.grade === '全学年') {
           targetGroups = groups;
@@ -458,6 +508,655 @@ export class AutoScheduleGenerator {
         console.log(`📊 ${subject.name}: ${placedSessions}/${totalSessions}コマ配置完了`);
       }
     }
+  }
+
+  /**
+   * Phase 2.5: 孫寧平先生のIT専門科目同日配置
+   * オブジェクト指向プログラミング（IT1年）とWebアプリ開発（IT2年）を同じ日の3,4限に配置
+   */
+  private placeSonPairedSubjects(
+    groups: any[],
+    weeks: number,
+    options: GenerationOptions,
+    schedule: Map<string, GeneratedEntry[]>
+  ): void {
+    console.log('\n🔧 Phase 2.5: 孫寧平先生のIT専門科目同日配置');
+    
+    // IT1年とIT2年のグループを取得
+    const it1Group = groups.find(g => g.id === 'it-1');
+    const it2Group = groups.find(g => g.id === 'it-2');
+    
+    if (!it1Group || !it2Group) {
+      console.log('❌ ITグループが見つかりません');
+      return;
+    }
+    
+    // 孫寧平先生のオブジェクト指向とWebアプリ開発を取得
+    const objectOrientedSubject = this.subjects.find(s => 
+      s.name === 'オブジェクト指向プログラミング' && 
+      s.teacherIds.some(tid => {
+        const teacher = this.teachers.find(t => t.id === tid);
+        return teacher?.name === '孫寧平';
+      })
+    );
+    
+    const webAppSubject = this.subjects.find(s => 
+      s.name === 'Webアプリ開発' && 
+      s.teacherIds.some(tid => {
+        const teacher = this.teachers.find(t => t.id === tid);
+        return teacher?.name === '孫寧平';
+      })
+    );
+    
+    if (!objectOrientedSubject || !webAppSubject) {
+      console.log('❌ 孫寧平先生の科目が見つかりません');
+      return;
+    }
+    
+    const sonTeacher = this.teachers.find(t => t.name === '孫寧平');
+    if (!sonTeacher) {
+      console.log('❌ 孫寧平先生が見つかりません');
+      return;
+    }
+    
+    console.log(`📚 オブジェクト指向プログラミング: ${objectOrientedSubject.totalClasses}コマ`);
+    console.log(`📚 Webアプリ開発: ${webAppSubject.totalClasses}コマ`);
+    
+    const it1Schedule = schedule.get(it1Group.id) || [];
+    const it2Schedule = schedule.get(it2Group.id) || [];
+    
+    let placedCount = 0;
+    const targetCount = Math.min(
+      objectOrientedSubject.totalClasses,  // 各科目のコマ数
+      webAppSubject.totalClasses
+    );
+    
+    // 各週を巡回して火曜日または水曜日の3,4限に配置
+    for (let week = 1; week <= weeks && placedCount < targetCount; week++) {
+      const weekStart = new Date(options.startDate);
+      weekStart.setDate(weekStart.getDate() + (week - 1) * 7);
+      
+      // 火曜日と水曜日を試す
+      const daysToTry = ['火', '水'];
+      
+      for (const dayOfWeek of daysToTry) {
+        const dayIndex = ['月', '火', '水', '木', '金'].indexOf(dayOfWeek);
+        if (dayIndex === -1) continue;
+        
+        const currentDate = new Date(weekStart);
+        currentDate.setDate(currentDate.getDate() + dayIndex);
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        // 休日チェック
+        if (this.isHoliday(dateStr)) {
+          console.log(`⏩ ${dateStr}（${dayOfWeek}）は休日のためスキップ`);
+          continue;
+        }
+        
+        // 成果発表会期間チェック（1/26-1/28）
+        const presentationStart = new Date('2026-01-26');
+        const presentationEnd = new Date('2026-01-28');
+        if (currentDate >= presentationStart && currentDate <= presentationEnd) {
+          console.log(`⏩ ${dateStr}は成果発表会期間のためスキップ`);
+          continue;
+        }
+        
+        // 補講期間チェック（1/29-2/6）
+        const makeupStart = new Date('2026-01-29');
+        const makeupEnd = new Date('2026-02-06');
+        if (currentDate >= makeupStart && currentDate <= makeupEnd) {
+          console.log(`⏩ ${dateStr}は補講期間のためスキップ`);
+          continue;
+        }
+        
+        // 3,4限が両方空いているかチェック
+        const slot3Key = `${week}-${dayOfWeek}-3限`;
+        const slot4Key = `${week}-${dayOfWeek}-4限`;
+        
+        // 教師の空き状況チェック（Setを使用）
+        const teacherScheduleSet = this.teacherSchedule.get(sonTeacher.id);
+        const teacherSlot3Used = teacherScheduleSet?.has(slot3Key);
+        const teacherSlot4Used = teacherScheduleSet?.has(slot4Key);
+        
+        if (teacherSlot3Used || teacherSlot4Used) {
+          continue; // 教師が既に予定あり
+        }
+        
+        // IT1年の3限とIT2年の4限が空いているかチェック
+        const it1Slot3Used = it1Schedule.some(e => 
+          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '3限'
+        );
+        const it2Slot4Used = it2Schedule.some(e => 
+          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '4限'
+        );
+        
+        if (it1Slot3Used || it2Slot4Used) {
+          continue; // いずれかのグループが既に予定あり
+        }
+        
+        // 配置可能な場合、両科目を配置
+        console.log(`✅ 第${week}週 ${dayOfWeek}曜日: 3限にオブジェクト指向（IT1年）、4限にWebアプリ（IT2年）を配置`);
+        
+        // オブジェクト指向プログラミング（IT1年）を3限に配置
+        const entry1: GeneratedEntry = {
+          id: `son-oop-${week}-3`,
+          groupId: it1Group.id,
+          subjectId: objectOrientedSubject.id,
+          subjectName: objectOrientedSubject.name,
+          teacherId: sonTeacher.id,
+          teacherName: sonTeacher.name,
+          classroomId: objectOrientedSubject.availableClassroomIds[0],
+          classroomName: this.classrooms.find(c => c.id === objectOrientedSubject.availableClassroomIds[0])?.name || '教室1',
+          week,
+          date: dateStr,
+          dayOfWeek,
+          period: '3限',
+          isFixed: false
+        };
+        
+        it1Schedule.push(entry1);
+        
+        // Webアプリ開発（IT2年）を4限に配置
+        const entry2: GeneratedEntry = {
+          id: `son-webapp-${week}-4`,
+          groupId: it2Group.id,
+          subjectId: webAppSubject.id,
+          subjectName: webAppSubject.name,
+          teacherId: sonTeacher.id,
+          teacherName: sonTeacher.name,
+          classroomId: webAppSubject.availableClassroomIds[0],
+          classroomName: this.classrooms.find(c => c.id === webAppSubject.availableClassroomIds[0])?.name || '教室2',
+          week,
+          date: dateStr,
+          dayOfWeek,
+          period: '4限',
+          isFixed: false
+        };
+        
+        it2Schedule.push(entry2);
+        
+        // 教師スケジュールを更新（Setを使用）
+        if (!this.teacherSchedule.has(sonTeacher.id)) {
+          this.teacherSchedule.set(sonTeacher.id, new Set());
+        }
+        const teacherSet = this.teacherSchedule.get(sonTeacher.id)!;
+        teacherSet.add(slot3Key);
+        teacherSet.add(slot4Key);
+        
+        placedCount++;
+        break; // この週は配置完了
+      }
+    }
+    
+    // スケジュールを更新
+    schedule.set(it1Group.id, it1Schedule);
+    schedule.set(it2Group.id, it2Schedule);
+    
+    console.log(`✅ 孫寧平先生のIT専門科目同日配置完了: ${placedCount}回（3限:オブジェクト指向、4限:Webアプリ）`);
+  }
+
+  /**
+   * Phase 2.6: 西川徹先生のIoTとデータ活用I/II同時配置
+   * IoTとデータ活用I（1年）とIoTとデータ活用II（2年）を水曜1,2限に配置
+   */
+  private placeNishikawaIoTSubjects(
+    groups: any[],
+    weeks: number,
+    options: GenerationOptions,
+    schedule: Map<string, GeneratedEntry[]>
+  ): void {
+    console.log('\n🔧 Phase 2.6: 西川徹先生のIoTとデータ活用I/II配置');
+    
+    // IT1年とIT2年のグループを取得（ITソリューション学科のみ）
+    const it1Group = groups.find(g => g.id === 'it-1');
+    const it2Group = groups.find(g => g.id === 'it-2');
+    
+    if (!it1Group || !it2Group) {
+      console.log('❌ ITグループが見つかりません');
+      return;
+    }
+    
+    // 西川徹先生のIoTとデータ活用I/IIを取得
+    const iotSubject1 = this.subjects.find(s => 
+      (s.name === 'IoTとデータ活用I' || s.name === 'IoTとデータ活用 I' || s.name === 'IoTとデータ活用 Ⅰ') && 
+      s.teacherIds.some(tid => {
+        const teacher = this.teachers.find(t => t.id === tid);
+        return teacher?.name === '西川徹';
+      })
+    );
+    
+    const iotSubject2 = this.subjects.find(s => 
+      (s.name === 'IoTとデータ活用II' || s.name === 'IoTとデータ活用 II' || s.name === 'IoTとデータ活用 Ⅱ') && 
+      s.teacherIds.some(tid => {
+        const teacher = this.teachers.find(t => t.id === tid);
+        return teacher?.name === '西川徹';
+      })
+    );
+    
+    if (!iotSubject1 || !iotSubject2) {
+      console.log('❌ 西川徹先生の科目が見つかりません');
+      console.log('利用可能な科目:', this.subjects.map(s => s.name));
+      return;
+    }
+    
+    const nishikawaTeacher = this.teachers.find(t => t.name === '西川徹');
+    if (!nishikawaTeacher) {
+      console.log('❌ 西川徹先生が見つかりません');
+      return;
+    }
+    
+    console.log(`📚 IoTとデータ活用I: ${iotSubject1.totalClasses}コマ`);
+    console.log(`📚 IoTとデータ活用II: ${iotSubject2.totalClasses}コマ`);
+    
+    const it1Schedule = schedule.get(it1Group.id) || [];
+    const it2Schedule = schedule.get(it2Group.id) || [];
+    
+    let placedCount = 0;
+    const targetCount = Math.min(
+      iotSubject1.totalClasses,  // 各科目のコマ数
+      iotSubject2.totalClasses
+    );
+    
+    // 各週を巡回して水曜日の1,2限または木曜日の2,3限に配置
+    for (let week = 1; week <= weeks && placedCount < targetCount; week++) {
+      const weekStart = new Date(options.startDate);
+      weekStart.setDate(weekStart.getDate() + (week - 1) * 7);
+      
+      let placed = false;
+      
+      // 10/22（第4週）の特別処理：木曜日2,3限を使用
+      if (week === 4) {
+        const thursdayDate = new Date(weekStart);
+        thursdayDate.setDate(thursdayDate.getDate() + 3); // 木曜日
+        const thursdayDateStr = thursdayDate.toISOString().split('T')[0];
+        
+        console.log(`📝 第4週は10/22（水）が使えないため、10/23（木）2,3限を検討`);
+        
+        // 木曜日2,3限が空いているかチェック
+        const slot2Key = `${week}-木-2限`;
+        const slot3Key = `${week}-木-3限`;
+        
+        // 教師の空き状況チェック
+        const teacherScheduleSet = this.teacherSchedule.get(nishikawaTeacher.id);
+        const teacherSlot2Used = teacherScheduleSet?.has(slot2Key);
+        const teacherSlot3Used = teacherScheduleSet?.has(slot3Key);
+        
+        if (!teacherSlot2Used && !teacherSlot3Used) {
+          // IT1年の2限とIT2年の3限が空いているかチェック
+          const it1Slot2Used = it1Schedule.some(e => 
+            e.week === week && e.dayOfWeek === '木' && e.period === '2限'
+          );
+          const it2Slot3Used = it2Schedule.some(e => 
+            e.week === week && e.dayOfWeek === '木' && e.period === '3限'
+          );
+          
+          if (!it1Slot2Used && !it2Slot3Used) {
+            console.log(`✅ 第${week}週 木曜日: 2限にIoTとデータ活用I（IT1年）、3限にIoTとデータ活用II（IT2年）を配置`);
+            
+            // IoTとデータ活用I（IT1年）を2限に配置
+            const entry1: GeneratedEntry = {
+              id: `nishikawa-iot1-${week}-2`,
+              groupId: it1Group.id,
+              subjectId: iotSubject1.id,
+              subjectName: 'IoTとデータ活用 I',
+              teacherId: nishikawaTeacher.id,
+              teacherName: nishikawaTeacher.name,
+              classroomId: iotSubject1.availableClassroomIds[0],
+              classroomName: this.classrooms.find(c => c.id === iotSubject1.availableClassroomIds[0])?.name || 'ICT1',
+              week,
+              date: thursdayDateStr,
+              dayOfWeek: '木',
+              period: '2限',
+              isFixed: false
+            };
+            
+            it1Schedule.push(entry1);
+            
+            // IoTとデータ活用II（IT2年）を3限に配置
+            const entry2: GeneratedEntry = {
+              id: `nishikawa-iot2-${week}-3`,
+              groupId: it2Group.id,
+              subjectId: iotSubject2.id,
+              subjectName: 'IoTとデータ活用 II',
+              teacherId: nishikawaTeacher.id,
+              teacherName: nishikawaTeacher.name,
+              classroomId: iotSubject2.availableClassroomIds[0],
+              classroomName: this.classrooms.find(c => c.id === iotSubject2.availableClassroomIds[0])?.name || 'ICT2',
+              week,
+              date: thursdayDateStr,
+              dayOfWeek: '木',
+              period: '3限',
+              isFixed: false
+            };
+            
+            it2Schedule.push(entry2);
+            
+            // 教師スケジュールを更新
+            if (!this.teacherSchedule.has(nishikawaTeacher.id)) {
+              this.teacherSchedule.set(nishikawaTeacher.id, new Set());
+            }
+            const teacherSet = this.teacherSchedule.get(nishikawaTeacher.id)!;
+            teacherSet.add(slot2Key);
+            teacherSet.add(slot3Key);
+            
+            placedCount++;
+            placed = true;
+          }
+        }
+      }
+      
+      // 通常の水曜日1,2限への配置
+      if (!placed) {
+        const dayOfWeek = '水';
+        const dayIndex = 2; // 水曜日は2
+        
+        const currentDate = new Date(weekStart);
+        currentDate.setDate(currentDate.getDate() + dayIndex);
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        // 休日チェック
+        if (this.isHoliday(dateStr)) {
+          console.log(`⏩ ${dateStr}（${dayOfWeek}）は休日のためスキップ`);
+          continue;
+        }
+        
+        // 成果発表会期間チェック（1/26-1/28）
+        const presentationStart = new Date('2026-01-26');
+        const presentationEnd = new Date('2026-01-28');
+        if (currentDate >= presentationStart && currentDate <= presentationEnd) {
+          console.log(`⏩ ${dateStr}は成果発表会期間のためスキップ`);
+          continue;
+        }
+        
+        // 補講期間チェック（1/29-2/6）
+        const makeupStart = new Date('2026-01-29');
+        const makeupEnd = new Date('2026-02-06');
+        if (currentDate >= makeupStart && currentDate <= makeupEnd) {
+          console.log(`⏩ ${dateStr}は補講期間のためスキップ`);
+          continue;
+        }
+        
+        // 1,2限が両方空いているかチェック
+        const slot1Key = `${week}-${dayOfWeek}-1限`;
+        const slot2Key = `${week}-${dayOfWeek}-2限`;
+        
+        // 教師の空き状況チェック
+        const teacherScheduleSet = this.teacherSchedule.get(nishikawaTeacher.id);
+        const teacherSlot1Used = teacherScheduleSet?.has(slot1Key);
+        const teacherSlot2Used = teacherScheduleSet?.has(slot2Key);
+        
+        if (teacherSlot1Used || teacherSlot2Used) {
+          continue; // 教師が既に予定あり
+        }
+        
+        // IT1年の1限とIT2年の2限が空いているかチェック
+        const it1Slot1Used = it1Schedule.some(e => 
+          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '1限'
+        );
+        const it2Slot2Used = it2Schedule.some(e => 
+          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '2限'
+        );
+        
+        if (it1Slot1Used || it2Slot2Used) {
+          continue; // いずれかのグループが既に予定あり
+        }
+        
+        // 配置可能な場合、両科目を配置
+        console.log(`✅ 第${week}週 ${dayOfWeek}曜日: 1限にIoTとデータ活用I（IT1年）、2限にIoTとデータ活用II（IT2年）を配置`);
+        
+        // IoTとデータ活用I（IT1年）を1限に配置
+        const entry1: GeneratedEntry = {
+          id: `nishikawa-iot1-${week}-1`,
+          groupId: it1Group.id,
+          subjectId: iotSubject1.id,
+          subjectName: 'IoTとデータ活用 I',
+          teacherId: nishikawaTeacher.id,
+          teacherName: nishikawaTeacher.name,
+          classroomId: iotSubject1.availableClassroomIds[0],
+          classroomName: this.classrooms.find(c => c.id === iotSubject1.availableClassroomIds[0])?.name || 'ICT1',
+          week,
+          date: dateStr,
+          dayOfWeek,
+          period: '1限',
+          isFixed: false
+        };
+        
+        it1Schedule.push(entry1);
+        
+        // IoTとデータ活用II（IT2年）を2限に配置
+        const entry2: GeneratedEntry = {
+          id: `nishikawa-iot2-${week}-2`,
+          groupId: it2Group.id,
+          subjectId: iotSubject2.id,
+          subjectName: 'IoTとデータ活用 II',
+          teacherId: nishikawaTeacher.id,
+          teacherName: nishikawaTeacher.name,
+          classroomId: iotSubject2.availableClassroomIds[0],
+          classroomName: this.classrooms.find(c => c.id === iotSubject2.availableClassroomIds[0])?.name || 'ICT2',
+          week,
+          date: dateStr,
+          dayOfWeek,
+          period: '2限',
+          isFixed: false
+        };
+        
+        it2Schedule.push(entry2);
+        
+        // 教師スケジュールを更新
+        if (!this.teacherSchedule.has(nishikawaTeacher.id)) {
+          this.teacherSchedule.set(nishikawaTeacher.id, new Set());
+        }
+        const teacherSet = this.teacherSchedule.get(nishikawaTeacher.id)!;
+        teacherSet.add(slot1Key);
+        teacherSet.add(slot2Key);
+        
+        placedCount++;
+      }
+    }
+    
+    // スケジュールを更新
+    schedule.set(it1Group.id, it1Schedule);
+    schedule.set(it2Group.id, it2Schedule);
+    
+    console.log(`✅ 西川徹先生のIoTとデータ活用I/II配置完了: ${placedCount}回（水曜1,2限または木曜2,3限）`);
+  }
+
+  /**
+   * Phase 2.7: 森田典子先生の進級制作・卒業制作配置
+   * 進級制作（1年）を2限、卒業制作（2年）を3-4限に配置
+   */
+  private placeMoritaProjects(
+    groups: any[],
+    weeks: number,
+    options: GenerationOptions,
+    schedule: Map<string, GeneratedEntry[]>
+  ): void {
+    console.log('\n🔧 Phase 2.7: 森田典子先生の進級制作・卒業制作配置');
+    
+    // IT1年とIT2年のグループを取得（ITソリューション学科のみ）
+    const it1Group = groups.find(g => g.id === 'it-1');
+    const it2Group = groups.find(g => g.id === 'it-2');
+    
+    if (!it1Group || !it2Group) {
+      console.log('❌ ITグループが見つかりません');
+      return;
+    }
+    
+    // 森田典子先生の進級制作・卒業制作を取得
+    const advancedProject = this.subjects.find(s => 
+      (s.name === '進級制作' || s.name === '進級制作（1年）') && 
+      s.teacherIds.some(tid => {
+        const teacher = this.teachers.find(t => t.id === tid);
+        return teacher?.name === '森田典子';
+      })
+    );
+    
+    const graduationProject = this.subjects.find(s => 
+      (s.name === '卒業制作' || s.name === '卒業制作（2年）') && 
+      s.teacherIds.some(tid => {
+        const teacher = this.teachers.find(t => t.id === tid);
+        return teacher?.name === '森田典子';
+      })
+    );
+    
+    if (!advancedProject || !graduationProject) {
+      console.log('❌ 森田典子先生の科目が見つかりません');
+      return;
+    }
+    
+    const moritaTeacher = this.teachers.find(t => t.name === '森田典子');
+    if (!moritaTeacher) {
+      console.log('❌ 森田典子先生が見つかりません');
+      return;
+    }
+    
+    console.log(`📚 進級制作: ${advancedProject.totalClasses}コマ`);
+    console.log(`📚 卒業制作: ${graduationProject.totalClasses}コマ`);
+    
+    const it1Schedule = schedule.get(it1Group.id) || [];
+    const it2Schedule = schedule.get(it2Group.id) || [];
+    
+    let placedCount = 0;
+    const targetCount = advancedProject.totalClasses; // 進級制作のコマ数（16コマ）
+    
+    // 各週を巡回して水曜日または火曜日に配置
+    for (let week = 1; week <= weeks && placedCount < targetCount; week++) {
+      const weekStart = new Date(options.startDate);
+      weekStart.setDate(weekStart.getDate() + (week - 1) * 7);
+      
+      // 水曜日を優先、次に火曜日を試す
+      const daysToTry = [
+        { day: '水', index: 2 },
+        { day: '火', index: 1 }
+      ];
+      
+      let placed = false;
+      
+      for (const { day: dayOfWeek, index: dayIndex } of daysToTry) {
+        if (placed) break;
+        
+        const currentDate = new Date(weekStart);
+        currentDate.setDate(currentDate.getDate() + dayIndex);
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        // 休日チェック
+        if (this.isHoliday(dateStr)) {
+          console.log(`⏩ ${dateStr}（${dayOfWeek}）は休日のためスキップ`);
+          continue;
+        }
+        
+        // 成果発表会期間チェック（1/26-1/28）
+        const presentationStart = new Date('2026-01-26');
+        const presentationEnd = new Date('2026-01-28');
+        if (currentDate >= presentationStart && currentDate <= presentationEnd) {
+          console.log(`⏩ ${dateStr}は成果発表会期間のためスキップ`);
+          continue;
+        }
+        
+        // 補講期間チェック（1/29-2/6）
+        const makeupStart = new Date('2026-01-29');
+        const makeupEnd = new Date('2026-02-06');
+        if (currentDate >= makeupStart && currentDate <= makeupEnd) {
+          console.log(`⏩ ${dateStr}は補講期間のためスキップ`);
+          continue;
+        }
+        
+        // 2,3,4限が空いているかチェック（1限はNG）
+        const slot2Key = `${week}-${dayOfWeek}-2限`;
+        const slot3Key = `${week}-${dayOfWeek}-3限`;
+        const slot4Key = `${week}-${dayOfWeek}-4限`;
+        
+        // 教師の空き状況チェック
+        const teacherScheduleSet = this.teacherSchedule.get(moritaTeacher.id);
+        const teacherSlot2Used = teacherScheduleSet?.has(slot2Key);
+        const teacherSlot3Used = teacherScheduleSet?.has(slot3Key);
+        const teacherSlot4Used = teacherScheduleSet?.has(slot4Key);
+        
+        if (teacherSlot2Used || teacherSlot3Used || teacherSlot4Used) {
+          continue; // 教師が既に予定あり
+        }
+        
+        // IT1年の2限とIT2年の3,4限が空いているかチェック
+        const it1Slot2Used = it1Schedule.some(e => 
+          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '2限'
+        );
+        const it2Slot3Used = it2Schedule.some(e => 
+          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '3限'
+        );
+        const it2Slot4Used = it2Schedule.some(e => 
+          e.week === week && e.dayOfWeek === dayOfWeek && e.period === '4限'
+        );
+        
+        if (it1Slot2Used || it2Slot3Used || it2Slot4Used) {
+          continue; // いずれかのグループが既に予定あり
+        }
+        
+        // 配置可能な場合、両科目を配置
+        console.log(`✅ 第${week}週 ${dayOfWeek}曜日: 2限に進級制作（IT1年）、3-4限に卒業制作（IT2年）を配置`);
+        
+        // 進級制作（IT1年）を2限に配置
+        const entry1: GeneratedEntry = {
+          id: `morita-advanced-${week}-2`,
+          groupId: it1Group.id,
+          subjectId: advancedProject.id,
+          subjectName: '進級制作',
+          teacherId: moritaTeacher.id,
+          teacherName: moritaTeacher.name,
+          classroomId: advancedProject.availableClassroomIds[0],
+          classroomName: this.classrooms.find(c => c.id === advancedProject.availableClassroomIds[0])?.name || 'ICT1',
+          week,
+          date: dateStr,
+          dayOfWeek,
+          period: '2限',
+          isFixed: false
+        };
+        
+        it1Schedule.push(entry1);
+        
+        // 卒業制作（IT2年）を3-4限に配置
+        const entry2_3: GeneratedEntry = {
+          id: `morita-graduation-${week}-3`,
+          groupId: it2Group.id,
+          subjectId: graduationProject.id,
+          subjectName: '卒業制作',
+          teacherId: moritaTeacher.id,
+          teacherName: moritaTeacher.name,
+          classroomId: graduationProject.availableClassroomIds[0],
+          classroomName: this.classrooms.find(c => c.id === graduationProject.availableClassroomIds[0])?.name || 'ICT2',
+          week,
+          date: dateStr,
+          dayOfWeek,
+          period: '3限',
+          isFixed: false
+        };
+        
+        const entry2_4: GeneratedEntry = {
+          ...entry2_3,
+          id: `morita-graduation-${week}-4`,
+          period: '4限'
+        };
+        
+        it2Schedule.push(entry2_3, entry2_4);
+        
+        // 教師スケジュールを更新
+        if (!this.teacherSchedule.has(moritaTeacher.id)) {
+          this.teacherSchedule.set(moritaTeacher.id, new Set());
+        }
+        const teacherSet = this.teacherSchedule.get(moritaTeacher.id)!;
+        teacherSet.add(slot2Key);
+        teacherSet.add(slot3Key);
+        teacherSet.add(slot4Key);
+        
+        placedCount++;
+        placed = true;
+      }
+    }
+    
+    // スケジュールを更新
+    schedule.set(it1Group.id, it1Schedule);
+    schedule.set(it2Group.id, it2Schedule);
+    
+    console.log(`✅ 森田典子先生の進級制作・卒業制作配置完了: ${placedCount}回（2限:進級制作、3-4限:卒業制作）`);
   }
 
   // 以降の既存メソッドは変更なし（省略）
